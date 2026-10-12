@@ -5,6 +5,42 @@ Claude Code의 **mods** 기능을 소개하고, 팀(Linux 환경)에서 쓸 만�
 
 > 기준일: 2026-10-12 · 대상: Claude Code v2.1.287 이상, Linux 터미널(CLI)
 
+## 5분 시작
+
+패치 없이 바로 쓸 수 있는 것만 모았습니다. 컨테이너 안에서 실행하세요.
+
+**1. 버전 확인**
+
+```bash
+claude --version   # 2.1.287 이상
+```
+
+**2. status line에 context % 붙이기 (mod 불필요)**
+
+기존 게이트웨이 status line을 지우지 않고 뒤에 덧붙입니다. → [USAGE.md §4-9](./USAGE.md#4-9-mod-없이-status-line에-context-표시)
+
+**3. mod 두 개 설치: context-bar(컨텍스트 막대) + blast-radius(위험 명령 확인)**
+
+```bash
+# context-bar
+claude plugin marketplace add hamzafer/claude-code-mods
+claude plugin install context-bar@claude-code-mods
+
+# blast-radius (Anthropic 공식 샘플)
+git clone https://github.com/anthropics/claude-code-playground.git
+cd claude-code-playground/claude-code/mods
+claude plugin marketplace add ./
+claude plugin install blast-radius@claude-code-playground-mods --scope user
+```
+
+GitHub에 접속할 수 없으면 반입한 폴더로 설치합니다. → [USAGE.md §3](./USAGE.md#3-설치-폐쇄망)
+
+**4. 확인**
+
+`claude`를 다시 실행하면 프롬프트 위에 컨텍스트 막대가 보입니다. 버려도 되는 폴더에서 Claude에게 `rm -rf build`를 시켜 보면 blast-radius가 실행 전에 멈추고 확인을 요청합니다.
+
+> mission-control(서브에이전트·툴 호출 트리)은 Linux에서 쓸모없는 모델 호출이 들어 있어 **한 줄을 지우고** 쓰는 걸 권장합니다. → [USAGE.md §4-1](./USAGE.md#4-1-mission-control-에이전트툴-호출-실시간-트리)
+
 ## Mods란?
 
 mod는 **Claude Code 프로세스 안에서 실행되는 작은 TypeScript/JavaScript 플러그인**입니다.
@@ -62,7 +98,7 @@ mod는 토큰을 쓰지 않고 항상 같은 방식으로 동작합니다.
 
 > context 사용률을 status line에 숫자로만 띄우고 싶다면 mod 없이 기본 status line으로도 됩니다. ([USAGE.md §4-9](./USAGE.md#4-9-mod-없이-status-line에-context-표시))
 
-**처음엔 `mission-control` + `blast-radius` + `context-bar`로 시작하는 걸 권장합니다.**
+**처음엔 [5분 시작](#5분-시작)대로 `context-bar` + `blast-radius`로 시작하고, 필요하면 나머지를 추가하세요.**
 
 ## 참고 링크
 

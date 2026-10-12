@@ -14,6 +14,7 @@
 | [ccdwyer/loop-breaker](https://github.com/ccdwyer/loop-breaker) | `1eeaaba` | Loop Breaker |
 | [ccdwyer/assertion-guardian](https://github.com/ccdwyer/assertion-guardian) | `ae1de89` | Assertion Guardian |
 | [Arunjay4213/claude-mods](https://github.com/Arunjay4213/claude-mods) | `d4fffd7` | token-ledger |
+| [anthropics/claude-code](https://github.com/anthropics/claude-code/tree/main/mods) | `3deb873` | 빌트인 mod (telemetry 중심, [§4](#4-빌트인-mods)) |
 
 ## 요약
 
@@ -193,7 +194,52 @@ mod의 hook이 예외를 던지거나 시간 제한(10초)을 넘기면 Claude C
 - hamzafer와 arasovic는 마켓플레이스 이름이 둘 다 `claude-code-mods`라 동시에 등록할 수 없습니다. 한쪽은 폴더로 직접 로드하세요.
 - `plugin.json`의 GitHub URL(작성자, 홈페이지)은 메타데이터일 뿐 mod 코드가 접속하지 않습니다.
 
-## 4. 점검 방법
+## 4. 빌트인 mods
+
+설치하지 않아도 Claude Code 실행 파일 안에 들어 있는 mod입니다. 소스는 [anthropics/claude-code `mods/`](https://github.com/anthropics/claude-code/tree/main/mods)(커밋 `3deb873`)에 공개돼 있습니다.
+**마켓플레이스에 없어서 `/plugin`에서 검색해도 나오지 않습니다.** 팀 환경은 Claude Code 2.1.295입니다.
+
+| Mod | 로드 조건 | 팀 환경 확인 결과 | 점검 범위 |
+| --- | --- | --- | --- |
+| `diff` | 항상 | `/diff` 동작 확인 | README만 |
+| `agents-md` | 항상 | 미확인 (`AGENTS.md` 지원) | README만 |
+| `telemetry` | Claude Code 분석이 켜진 환경 | **켜지는 조건에 해당** (아래 참고) | 전송 조건·대상·재시도 코드 |
+| `sec-default` | 관리 설정이 있는 머신, 또는 Team·Enterprise 조직 계정 | 관리 설정 없음. 계정 인식 여부는 화면으로 확인 불가 | README |
+
+### telemetry
+
+| 항목 | 결과 |
+| --- | --- |
+| 전송 대상 | `https://api.anthropic.com/api/event_logging/v2/batch` 하나 (`entries/ingest-url.ts:9`) |
+| 보내는 내용 | 이벤트 이름과 속성. 값은 숫자, 불리언, 정해진 선택값만이고 **프롬프트·코드 같은 자유 텍스트는 없음**. 세션 ID, 모델, OS·셸 등 실행 환경 정보, 저장소 원격 주소의 해시(`rh`, `metadata-of.ts:14`)가 함께 들어감 |
+| 실패 시 | 한 번 재시도 후 버림. 인증 정보가 없어도 버림 (`telemetry-of.ts:17`) |
+| 다른 mod의 사용 | 설치한 mod는 호출이 거부됨. 내장 플러그인만 사용 |
+
+**전송하지 않는 조건** (`is-analytics-off.ts`). 하나라도 해당하면 아무것도 보내지 않습니다.
+
+- `DISABLE_TELEMETRY` 또는 `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`가 설정됨, `DO_NOT_TRACK`이 켜짐
+- `CLAUDE_CODE_USE_BEDROCK`, `_VERTEX`, `_FOUNDRY` 등 서드파티 제공자 사용
+- `CLAUDE_CODE_USE_GATEWAY`가 켜짐, 또는 관리 설정이 게이트웨이 로그인을 강제
+- `CLAUDE_CODE_CUSTOM_OAUTH_URL`이 설정됨
+
+**팀 환경:** 컨테이너에 있는 관련 환경변수는 `ANTHROPIC_BASE_URL`과 `CLAUDE_CODE_SSE_PORT` 두 개뿐입니다.
+`ANTHROPIC_BASE_URL`은 위 조건에 없으므로 **telemetry는 분석이 켜진 것으로 판단합니다.**
+폐쇄망이라 전송은 실패하고 한 번 재시도 후 버려지므로 실제로 나가는 데이터는 없습니다. 다만 외부 통신이 열리는 순간 전송이 시작될 수 있으니
+**이미지에 `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`을 넣는 것을 권장합니다.** ([USAGE.md §1-3](./USAGE.md#1-3-외부-전송-끄기-권장))
+
+> 위는 telemetry mod 코드 기준입니다. Claude Code 본체가 `ANTHROPIC_BASE_URL`만으로 자체 분석을 끄는지는 소스가 공개되지 않아 확인하지 못했습니다.
+> 이 경우에도 위 환경변수를 넣으면 꺼집니다.
+
+### sec-default
+
+설치한 mod가 조직의 hook, 관리 설정, 권한 규칙(deny 등)을 건드리지 못하게 막는 보호 장치입니다. 자체 정책은 없습니다.
+
+- 관리 설정이나 `managed-mcp.json`이 있는 머신, 또는 Team·Enterprise 조직 계정일 때 가장 바깥에 로드됩니다.
+- 팀 컨테이너에는 관리 설정이 없으므로, 게이트웨이를 거친 로그인이 Enterprise 조직으로 인식될 때만 로드됩니다. **이는 화면으로 확인할 수 없습니다.**
+- 따라서 **"설치한 mod가 내 deny 규칙을 우회할 수 있다"고 가정**하고 mod를 검토해야 합니다.
+- 확실히 적용하려면 이미지에 `/etc/claude-code/managed-settings.json`을 넣으면 됩니다. 그러면 계정과 상관없이 항상 로드됩니다.
+
+## 5. 점검 방법
 
 - 각 저장소를 `--depth 1`로 받아 점검용 폴더에 격리하고, mod 코드를 실행하지 않았습니다.
 - `$.http`, `$.process.run`, `$.fs`, `$.env`, `$.model`, `tool.check`, dynamic `import()`, `eval` 사용처를 모두 찾아 읽었습니다.

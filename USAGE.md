@@ -38,6 +38,18 @@ claude --version   # 2.1.287 이상이어야 함
   tmux를 쓴다면 Claude Code가 있는 pane을 충분히 넓게 잡으세요.
 - blast-radius는 `bash`, `git`, `find`, `du`가 PATH에 있어야 합니다. 일반 Linux에는 모두 기본으로 있습니다.
 
+### 1-3. 외부 전송 끄기 (권장)
+
+팀 컨테이너는 `ANTHROPIC_BASE_URL`로 사내 게이트웨이에 연결합니다. 이 방식은 빌트인 `telemetry` mod가 "분석 꺼짐"으로 판단하는 조건에 들어가지 않아서,
+분석 이벤트를 `api.anthropic.com`으로 보내려다 폐쇄망이라 실패합니다. 동작에는 문제가 없지만 확실히 끄려면 **Docker 이미지 환경변수**에 아래를 넣으세요.
+
+```dockerfile
+ENV CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+```
+
+telemetry와 함께 Claude Code의 다른 비필수 외부 통신도 꺼집니다. 게이트웨이로 가는 모델 요청은 필수 통신이라 영향이 없고, 꺼지는 것들은 폐쇄망에서 어차피 실패하는 통신입니다.
+자세한 근거는 [SECURITY.md §4](./SECURITY.md#4-빌트인-mods)를 보세요.
+
 ---
 
 ## 2. 설치: 인터넷 가능 환경
@@ -382,19 +394,38 @@ claude plugin install blast-radius@claude-code-playground-mods --scope user
 context 사용률을 숫자로만 보고 싶다면 mod가 필요 없습니다. 기본 status line 스크립트가 받는 JSON에
 `context_window.used_percentage`와 `cost.total_cost_usd`가 들어 있습니다. mod가 아니라서 보안 검토 부담도 없습니다.
 
+> **팀 컨테이너에서는 `statusLine`을 덮어쓰지 마세요.** 이미 게이트웨이 스크립트(`~/.local/share/gate.../statusline`)가
+> 설정돼 있습니다. 새 명령으로 바꾸면 그 스크립트가 보여주던 정보가 사라집니다. 아래처럼 **감싸서 덧붙이세요.**
+
+**1. 기존 스크립트를 감싸는 래퍼 만들기**
+
+```bash
+cat > ~/.claude/statusline-wrap.sh <<'EOF'
+#!/usr/bin/env bash
+input=$(cat)
+orig=$(printf '%s' "$input" | ~/.local/share/gate.../statusline)   # settings.json에 있던 실제 경로로 바꾸기
+ctx=$(printf '%s' "$input" | jq -r '.context_window.used_percentage // empty')
+printf '%s%s\n' "$orig" "${ctx:+ · ctx ${ctx}%}"
+EOF
+chmod +x ~/.claude/statusline-wrap.sh
+```
+
+**2. `~/.claude/settings.json`의 `statusLine.command`만 래퍼로 교체**
+
 ```json
-// ~/.claude/settings.json
 {
   "statusLine": {
     "type": "command",
-    "command": "jq -r '\"[\\(.model.display_name)] ctx \\(.context_window.used_percentage // 0)% · $\\(.cost.total_cost_usd // 0)\"'"
+    "command": "~/.claude/statusline-wrap.sh"
   }
 }
 ```
 
-- 서버에 `jq`가 설치돼 있어야 합니다.
-- Claude Code 안에서 `/statusline`을 입력하고 원하는 표시를 설명해도 대신 설정해 줍니다.
-- 사내 게이트웨이를 쓰면 `rate_limits.spend_limit.used_percentage`로 지출 한도 사용률도 표시할 수 있습니다. ([status line 문서](https://code.claude.com/docs/en/statusline))
+기존 표시 뒤에 `· ctx 23%`가 붙습니다. 되돌리려면 `command`를 원래 경로로 바꾸면 됩니다.
+
+- 컨테이너에 `jq`가 설치돼 있어야 합니다.
+- 비용도 붙이려면 `.cost.total_cost_usd`를 같은 방식으로 읽으면 됩니다. 단 팀 환경에는 `modelPricing`이 없어서 **정가 기준 추정치**입니다.
+- 필드 목록은 [status line 문서](https://code.claude.com/docs/en/statusline)를 보세요. `rate_limits.spend_limit`은 Claude apps gateway 전용이라, `ANTHROPIC_BASE_URL`로 연결하는 팀 환경에서는 값이 없을 가능성이 큽니다.
 
 ---
 

@@ -12,7 +12,7 @@
 3. [설치: 폐쇄망](#3-설치-폐쇄망)
 4. [Mod별 사용법](#4-mod별-사용법)
 5. [보안 체크리스트](#5-보안-체크리스트)
-6. [끄기와 문제 해결](#6-끄기와-문제-해결)
+6. [끄기, 제거, 문제 해결](#6-끄기-제거-문제-해결)
 
 ---
 
@@ -507,15 +507,77 @@ claude plugin validate ./<mod 폴더>
 
 ---
 
-## 6. 끄기와 문제 해결
+## 6. 끄기, 제거, 문제 해결
 
-### 끄기
+마음에 들지 않으면 **먼저 끄고(disable)**, 다시 쓸 일이 없으면 **제거(uninstall)** 하세요. 끄기는 설치를 그대로 두므로 `enable`로 바로 되돌릴 수 있습니다.
+명령은 셸에서 실행하고, 끝나면 Claude Code를 다시 시작하거나 열린 세션에서 `/reload-plugins`를 실행하세요.
+
+### 6-1. 잠깐 끄기 / 다시 켜기
+
+```bash
+claude plugin disable token-weather@claude-code-playground-mods
+claude plugin enable  token-weather@claude-code-playground-mods
+```
+
+- Claude Code 안에서는 `/plugin` → Installed 탭에서 끄고 켤 수 있습니다.
+- 이름만(`token-weather`) 써도 되지만, 같은 이름이 여러 카탈로그에 있으면 `이름@카탈로그`로 써야 합니다.
+- 설치된 목록과 정확한 이름은 `claude plugin list`로 확인합니다.
+
+### 6-2. 완전히 제거하기
+
+```bash
+claude plugin uninstall token-weather@claude-code-playground-mods
+```
+
+- 기본으로 `user` 범위에서 지웁니다. 다른 범위에 설치했다면 `--scope project` 처럼 지정하세요.
+- mod가 저장한 데이터(`~/.claude/plugins/data/<id>/`)도 **함께 삭제됩니다.** 설정이나 기록을 남기려면 `--keep-data`를 붙이세요.
+
+추천 mod별 제거 명령:
+
+| Mod | 명령 |
+| --- | --- |
+| blast-radius | `claude plugin uninstall blast-radius@claude-code-playground-mods` |
+| token-weather | `claude plugin uninstall token-weather@claude-code-playground-mods` |
+| replay-theater | `claude plugin uninstall replay-theater@claude-code-playground-mods` |
+| mission-control | `claude plugin uninstall mission-control@claude-code-mods` |
+| context-bar | `claude plugin uninstall context-bar@claude-code-mods` |
+| change-ledger | `claude plugin uninstall change-ledger@claude-code-mods` |
+| turn-timeline | `claude plugin uninstall turn-timeline@claude-code-mods` |
+| Loop Breaker | `claude plugin uninstall loop-breaker@ccdwyer-mods` |
+| Assertion Guardian | `claude plugin uninstall assertion-guardian@ccdwyer-mods` |
+| token-ledger | `claude plugin uninstall token-ledger@claude-mods` |
+
+### 6-3. 카탈로그(마켓플레이스)까지 지우기
+
+```bash
+claude plugin marketplace list                        # 등록된 카탈로그 이름 확인
+claude plugin marketplace remove claude-code-playground-mods
+```
+
+> **주의:** 카탈로그를 지우면 **그 카탈로그에서 설치한 mod가 모두 함께 제거됩니다.** 예를 들어 `claude-code-mods`를 지우면 mission-control과 context-bar가 같이 사라집니다.
+> mod 하나만 빼고 싶을 때는 6-2의 `uninstall`을 쓰세요. 이름은 GitHub 저장소 이름이 아니라 `marketplace list`에 나오는 이름입니다.
+
+### 6-4. 폴더로 로드한 mod (폐쇄망 방식)
+
+`--plugin-dir`나 `CLAUDE_CODE_PLUGIN_DIRS`로 로드한 mod는 설치된 게 아니라서 `uninstall` 대상이 아닙니다.
+
+- `--plugin-dir`: 다음 실행부터 그 옵션을 빼면 됩니다.
+- `CLAUDE_CODE_PLUGIN_DIRS`: `~/.claude/settings.json`의 `env`나 Docker 이미지 환경변수에서 해당 경로를 지우세요. 폴더 자체는 남아 있어도 로드되지 않습니다.
+
+### 6-5. 내장 mod와 status line 되돌리기
+
+- **내장 mod**(`diff`, `agents-md`)는 지울 수 없고 끄기만 됩니다. `/plugin`의 내장(built-in) 목록에서 끕니다. agents-md는 끄는 대신 [4-11](#4-11-내장-mod-설정-agents-md-끄기-권장) 설정을 권장합니다.
+- **status line 래퍼**([4-12](#4-12-mod-없이-status-line에-context-표시))를 되돌리려면 `statusLine.command`를 원래 게이트웨이 스크립트 경로로 바꾸고 `~/.claude/statusline-wrap.sh`를 지우면 됩니다.
+
+### 6-6. 한꺼번에 끄기 (문제가 생겼을 때)
 
 | 범위 | 방법 |
 | --- | --- |
-| mod 하나 | `/plugin` → Installed 탭에서 비활성화 |
-| 이번 세션만 전부 | `claude --safe-mode` |
-| 항상 전부 | `~/.claude/settings.json`에 `"disableAllHooks": true` (기존 settings hook도 같이 꺼짐) |
+| 설치한 플러그인 전부 | `claude plugin disable --all` |
+| 이번 세션만 mod 없이 | `claude --safe-mode` |
+| 항상 mod와 hook 전부 | `~/.claude/settings.json`에 `"disableAllHooks": true` (기존 settings hook도 같이 꺼짐, 내장 mod는 해당 없음) |
+
+### 문제 해결
 
 ### 문제 해결
 

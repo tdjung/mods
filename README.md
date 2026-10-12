@@ -39,6 +39,15 @@ GitHub에 접속할 수 없으면 반입한 폴더로 설치합니다. → [USAG
 
 `claude`를 다시 실행하면 프롬프트 위에 컨텍스트 막대가 보입니다. 버려도 되는 폴더에서 Claude에게 `rm -rf build`를 시켜 보면 blast-radius가 실행 전에 멈추고 확인을 요청합니다.
 
+**5. 마음에 들지 않으면**
+
+```bash
+claude plugin disable context-bar@claude-code-mods     # 잠깐 끄기 (enable로 되돌림)
+claude plugin uninstall context-bar@claude-code-mods   # 완전히 제거
+```
+
+자세한 내용과 mod별 제거 명령은 [USAGE.md §6](./USAGE.md#6-끄기-제거-문제-해결)을 보세요.
+
 > mission-control(서브에이전트·툴 호출 트리)은 Linux에서 쓸모없는 모델 호출이 들어 있어 **한 줄을 지우고** 쓰는 걸 권장합니다. → [USAGE.md §4-1](./USAGE.md#4-1-mission-control-에이전트툴-호출-실시간-트리)
 
 ## Mods란?

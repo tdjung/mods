@@ -1,0 +1,55 @@
+{
+  "name": "team-mods",
+  "description": "Team catalog of reviewed Claude Code mods, pinned to audited commits. See SECURITY.md and plugins/README.md for sources and patches.",
+  "owner": {
+    "name": "tdjung",
+    "url": "https://github.com/tdjung/mods"
+  },
+  "plugins": [
+    {
+      "name": "blast-radius",
+      "source": "./plugins/blast-radius",
+      "description": "Anthropic sample. Holds risky shell commands (rm -rf, git reset --hard, force push) and shows what they would change, with Proceed and Cancel."
+    },
+    {
+      "name": "token-weather",
+      "source": "./plugins/token-weather",
+      "description": "Anthropic sample. Context window fill as a one-line forecast above the prompt, with a chart of recent turns."
+    },
+    {
+      "name": "replay-theater",
+      "source": "./plugins/replay-theater",
+      "description": "Anthropic sample. /replay steps through the last turn's file edits, one diff at a time."
+    },
+    {
+      "name": "context-bar",
+      "source": "./plugins/context-bar",
+      "description": "Context window as a stacked bar by category (system, MCP tools, memory, messages) above the prompt. /context-bar toggles it."
+    },
+    {
+      "name": "mission-control",
+      "source": "./plugins/mission-control",
+      "description": "Team-patched: Haiku edit summaries removed. /mission shows the main agent, subagents and every tool call as a live tree."
+    },
+    {
+      "name": "change-ledger",
+      "source": "./plugins/change-ledger",
+      "description": "Team-patched: git calls time out after 5 s and skip untracked scans. /changes lists files this session edited beside git status."
+    },
+    {
+      "name": "turn-timeline",
+      "source": "./plugins/turn-timeline",
+      "description": "/timeline draws the current turn as a timeline: model, tool and idle time, and the slowest steps."
+    },
+    {
+      "name": "loop-breaker",
+      "source": "./plugins/loop-breaker",
+      "description": "Refuses a call that failed twice with the same error, and edits that flip a file back and forth. /unstick clears it."
+    },
+    {
+      "name": "assertion-guardian",
+      "source": "./plugins/assertion-guardian",
+      "description": "Refuses test edits that drop assertions, add skips or change expected values. /allow-test-change allows one."
+    }
+  ]
+}

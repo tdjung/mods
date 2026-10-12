@@ -4,6 +4,7 @@
 기준은 팀 환경인 **Linux + 폐쇄망 + 엔터프라이즈 요금제**입니다.
 
 > 점검일: 2026-10-12. 아래 커밋 기준이며, 다른 버전을 반입하면 다시 점검해야 합니다.
+> 이 커밋들은 팀 카탈로그(`plugins/`)에 그대로 들어 있고, mission-control과 change-ledger에는 아래 권장 패치가 **적용돼 있습니다**([patches/](./patches)).
 > 줄 번호는 해당 커밋의 파일 기준입니다.
 
 | 저장소 | 커밋 | 점검한 mod |
@@ -39,8 +40,8 @@
 | turn-timeline | 그대로 사용 | 외부 접근 없음. 기록·표시만 함 |
 | context-bar | 그대로 사용 | 외부 접근 없음. 숨김 여부 하나만 저장 |
 | token-ledger | 그대로 사용 | 외부 접근 없음. 금액이 정가 추정치일 수 있음 |
-| change-ledger | 사용, 패치 권장 | 턴마다 git을 timeout 없이 실행. 큰 저장소에서 느려질 수 있음 |
-| mission-control | 사용, **패치 권장** | 파일을 수정한 턴마다 Haiku를 호출해 코드 조각을 보냄. Linux에서는 쓸모없음 |
+| change-ledger | **팀 카탈로그에 패치 적용** | 원본은 턴마다 git을 timeout 없이 실행. 큰 저장소에서 느려질 수 있음 |
+| mission-control | **팀 카탈로그에 패치 적용** | 원본은 파일을 수정한 턴마다 Haiku를 호출해 코드 조각을 보냄. Linux에서는 쓸모없음 |
 | Loop Breaker | 사용 | EDA 로그에서는 거의 동작하지 않음(잘못 막지는 않음) |
 | Assertion Guardian | 사용, RTL엔 효과 제한 | SV/Verilog testbench 미인식. `/data/...` 경로에서 판별이 꺼짐 |
 
@@ -83,7 +84,7 @@ mod의 hook이 예외를 던지거나 시간 제한(10초)을 넘기면 Claude C
 
 **Linux 영향:** Code 뷰는 Linux에서 그려지지 않으므로 이 호출은 **쓸모없이 비용만 들고 수정 코드 조각을 모델로 보냅니다.**
 
-**권장 패치:** 134행 삭제.
+**권장 패치:** 134행 삭제. → 팀 카탈로그에 적용됨, 패치 후 `claude plugin validate` 결과에서 `$.model.complete` 호출이 사라진 것을 확인했습니다.
 
 ```diff
 -      void explain($, t, new Map(changes)).catch(() => {})
@@ -105,6 +106,7 @@ mod의 hook이 예외를 던지거나 시간 제한(10초)을 넘기면 Claude C
 `/changes` 명령 쪽은 git 실패를 처리하지 않아 오류가 날 수 있습니다(145행).
 
 **권장 패치:** `git status`에 `-uno`, 두 명령에 `--no-optional-locks` 추가, 또는 패널이 열려 있을 때만 git 실행.
+→ 팀 카탈로그에는 `-uno`, `--no-optional-locks`, 5초 timeout, `/changes` 오류 처리를 적용했습니다([patches/change-ledger.patch](./patches/change-ledger.patch)).
 
 ### turn-timeline (`turn-timeline/hooks/register.tsx`)
 
@@ -238,6 +240,7 @@ Anthropic DevRel 예제 (`claude-code/mods/replay-theater/hooks/replay-theater.m
 
 | 마켓플레이스 | 플러그인 출처 | 폐쇄망에서 `marketplace add ./` |
 | --- | --- | --- |
+| **tdjung/mods (팀 카탈로그 `team-mods`)** | 로컬 경로(`./plugins/...`) | **가능** (설치 테스트 완료) |
 | hamzafer/claude-code-mods | 로컬 경로(`./mods/...`) | 가능 |
 | arasovic/claude-code-mods | 로컬 경로(`./change-ledger` 등) | 가능 |
 | anthropics/claude-code-playground | 로컬 경로(`./blast-radius`) | 가능 (`claude-code/mods` 폴더에서) |

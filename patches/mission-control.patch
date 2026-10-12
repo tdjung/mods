@@ -1,0 +1,10 @@
+--- a/hooks/register.tsx
++++ b/hooks/register.tsx
+@@ -131,7 +131,6 @@
+     })
+     if (isMain) {
+       const t = await read($, turn)
+-      void explain($, t, new Map(changes)).catch(() => {}) // in the background, so the turn ends at once
+     }
+     return r
+   })

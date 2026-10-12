@@ -7,7 +7,8 @@ Claude Code의 **mods** 기능을 소개하고, 팀(Linux 환경)에서 쓸 만�
 
 ## 5분 시작
 
-패치 없이 바로 쓸 수 있는 것만 모았습니다. 컨테이너 안에서 실행하세요.
+추천 mod는 이 저장소의 **팀 카탈로그(`team-mods`)**에 점검한 버전 그대로 들어 있습니다. 패치가 필요한 것도 이미 패치돼 있습니다.
+컨테이너 안에서 실행하세요.
 
 **1. 버전 확인**
 
@@ -15,40 +16,51 @@ Claude Code의 **mods** 기능을 소개하고, 팀(Linux 환경)에서 쓸 만�
 claude --version   # 2.1.287 이상
 ```
 
-**2. status line에 context % 붙이기 (mod 불필요)**
+**2. 이 저장소를 받아 카탈로그로 등록 (한 번만)**
 
-기존 게이트웨이 status line을 지우지 않고 뒤에 덧붙입니다. → [USAGE.md §4-12](./USAGE.md#4-12-mod-없이-status-line에-context-표시)
+```bash
+git clone https://github.com/tdjung/mods.git ~/team-mods   # 폐쇄망은 사내 Git 미러 주소로
+claude plugin marketplace add ~/team-mods
+```
+
+`~/team-mods` 폴더는 지우지 마세요. 카탈로그가 이 폴더를 그대로 읽습니다. 폐쇄망 반입은 [USAGE.md §3](./USAGE.md#3-설치-폐쇄망)을 보세요.
 
 **3. mod 두 개 설치: context-bar(컨텍스트 막대) + blast-radius(위험 명령 확인)**
 
 ```bash
-# context-bar
-claude plugin marketplace add hamzafer/claude-code-mods
-claude plugin install context-bar@claude-code-mods
-
-# blast-radius (Anthropic 공식 샘플)
-git clone https://github.com/anthropics/claude-code-playground.git
-cd claude-code-playground/claude-code/mods
-claude plugin marketplace add ./
-claude plugin install blast-radius@claude-code-playground-mods --scope user
+claude plugin install context-bar@team-mods
+claude plugin install blast-radius@team-mods
 ```
 
-GitHub에 접속할 수 없으면 반입한 폴더로 설치합니다. → [USAGE.md §3](./USAGE.md#3-설치-폐쇄망)
+열려 있는 Claude Code가 있으면 `/reload-plugins`로 바로 반영됩니다.
 
 **4. 확인**
 
-`claude`를 다시 실행하면 프롬프트 위에 컨텍스트 막대가 보입니다. 버려도 되는 폴더에서 Claude에게 `rm -rf build`를 시켜 보면 blast-radius가 실행 전에 멈추고 확인을 요청합니다.
+턴이 한 번 끝나면 프롬프트 위에 컨텍스트 막대가 보입니다. 버려도 되는 폴더에서 Claude에게 `rm -rf build`를 시켜 보면 blast-radius가 실행 전에 멈추고 확인을 요청합니다.
 
-**5. 마음에 들지 않으면**
+**5. status line에 context % 붙이기 (선택, mod 불필요)**
+
+기존 게이트웨이 status line을 지우지 않고 뒤에 덧붙입니다. → [USAGE.md §4-12](./USAGE.md#4-12-mod-없이-status-line에-context-표시)
+
+**6. 마음에 들지 않으면**
 
 ```bash
-claude plugin disable context-bar@claude-code-mods     # 잠깐 끄기 (enable로 되돌림)
-claude plugin uninstall context-bar@claude-code-mods   # 완전히 제거
+claude plugin disable context-bar@team-mods     # 잠깐 끄기 (enable로 되돌림)
+claude plugin uninstall context-bar@team-mods   # 완전히 제거
 ```
 
-자세한 내용과 mod별 제거 명령은 [USAGE.md §6](./USAGE.md#6-끄기-제거-문제-해결)을 보세요.
+자세한 내용과 mod별 제거 명령은 [USAGE.md §6](./USAGE.md#6-끄기-제거-문제-해결)을 보세요. 나머지 mod 설치는 [USAGE.md §2](./USAGE.md#2-설치-팀-카탈로그team-mods)에 있습니다.
 
-> mission-control(서브에이전트·툴 호출 트리)은 Linux에서 쓸모없는 모델 호출이 들어 있어 **한 줄을 지우고** 쓰는 걸 권장합니다. → [USAGE.md §4-1](./USAGE.md#4-1-mission-control-에이전트툴-호출-실시간-트리)
+## 저장소 구성
+
+| 경로 | 내용 |
+| --- | --- |
+| `README.md` | 이 문서: mods 소개, 추천 목록, 5분 시작 |
+| `USAGE.md` | 설치, mod별 사용법, 끄기·제거, 문제 해결 |
+| `SECURITY.md` | 코드 보안 점검 결과 |
+| `.claude-plugin/marketplace.json` | 팀 카탈로그(`team-mods`) 정의 |
+| `plugins/` | 카탈로그에 든 mod 9개. 출처·커밋·라이선스는 [plugins/README.md](./plugins/README.md) |
+| `patches/` | mission-control, change-ledger에 적용한 팀 패치 |
 
 ## Mods란?
 
@@ -81,6 +93,7 @@ mod는 토큰을 쓰지 않고 항상 같은 방식으로 동작합니다.
 ## 추천 mods
 
 모두 **외부 네트워크 호출이 없고**, 공개 소스(MIT/Apache-2.0)이며, 코드를 직접 점검했습니다. 폐쇄망에서도 쓸 수 있습니다.
+내장 mod와 token-ledger를 뺀 나머지는 모두 **팀 카탈로그(`team-mods`)로 설치**합니다.
 점검 결과의 근거와 권장 패치는 [SECURITY.md](./SECURITY.md)에 있습니다.
 
 ### Anthropic 공식 제공
@@ -99,13 +112,13 @@ mod는 토큰을 쓰지 않고 항상 같은 방식으로 동작합니다.
 
 | 분류 | Mod | 설명 | 명령 | 점검 결과 |
 | --- | --- | --- | --- | --- |
-| 가시성 | [mission-control](https://claude-mods.com/mission-control/) | 메인 에이전트, 서브에이전트, 모든 툴 호출을 사이드 패널에 실시간 트리로 보여줍니다. 각 서브에이전트의 실행 시간, 툴 호출 수, 현재 상태(실행 중/실패)를 확인할 수 있습니다. *Linux에서는 Who 뷰만 지원.* | `/mission` | **패치 후 사용.** 수정 턴마다 Haiku로 코드 조각 전송(Linux에선 쓸모없음) |
-| 가시성 | [change-ledger](https://claude-mods.com/change-ledger/) | 세션에서 수정한 모든 파일을 추가/삭제 줄 수, 어느 에이전트가 바꿨는지와 함께 보여주고, 아래에 git working tree를 표시합니다. | `/changes` | 사용, 패치 권장. 턴마다 git을 timeout 없이 실행 |
+| 가시성 | [mission-control](https://claude-mods.com/mission-control/) | 메인 에이전트, 서브에이전트, 모든 툴 호출을 사이드 패널에 실시간 트리로 보여줍니다. 각 서브에이전트의 실행 시간, 툴 호출 수, 현재 상태(실행 중/실패)를 확인할 수 있습니다. *Linux에서는 Who 뷰만 지원.* | `/mission` | **팀 카탈로그에 패치 적용.** 원본은 수정 턴마다 Haiku로 코드 조각 전송 |
+| 가시성 | [change-ledger](https://claude-mods.com/change-ledger/) | 세션에서 수정한 모든 파일을 추가/삭제 줄 수, 어느 에이전트가 바꿨는지와 함께 보여주고, 아래에 git working tree를 표시합니다. | `/changes` | **팀 카탈로그에 패치 적용.** 원본은 턴마다 git을 timeout 없이 실행 |
 | 가시성 | [turn-timeline](https://claude-mods.com/turn-timeline/) | 현재 턴을 타임라인으로 그려 모델·툴·대기 시간 비율과 가장 느린 3단계를 보여줍니다. 시뮬레이션·빌드가 긴 작업의 병목 파악용. | `/timeline` | 그대로 사용 |
 | 안전장치 | [Loop Breaker](https://claude-mods.com/loop-breaker/) | 같은 에러로 두 번 실패한 호출의 세 번째 시도와, 같은 파일을 두 버전 사이로 뒤집는 수정을 거부합니다. | 자동 (`/unstick`) | 사용. EDA 로그(시드 등)에서는 거의 동작 안 함 |
 | 안전장치 | [Assertion Guardian](https://claude-mods.com/assertion-guardian/) | 테스트를 통과시키려고 assertion 삭제, skip 추가, 기대값 변경을 하는 수정을 거부합니다. *cocotb `test_*.py`는 인식.* | 자동 (`/allow-test-change`) | 사용, RTL엔 효과 제한. SV testbench 미인식 |
 | 비용·컨텍스트 | [context-bar](https://claude-mods.com/context-bar/) | 컨텍스트 창을 카테고리별(시스템, MCP 툴, 메모리, 메시지) 막대로 보여주고, compaction 직전 70%/90%에서 노랑/빨강으로 바뀝니다. 컨텍스트를 많이 차지하는 MCP 서버를 찾는 데 유용합니다. | `/context-bar` | 그대로 사용 |
-| 비용·컨텍스트 | [token-ledger](https://claude-mods.com/token-ledger/) | 프롬프트 아래에 세션 비용, 직전 턴 비용, 캐시 적중률을 표시하고, 턴별 비용 표를 보여줍니다. *금액은 정가 추정치.* | `/ledger` | 그대로 사용 |
+| 비용·컨텍스트 | [token-ledger](https://claude-mods.com/token-ledger/) | 프롬프트 아래에 세션 비용, 직전 턴 비용, 캐시 적중률을 표시하고, 턴별 비용 표를 보여줍니다. *금액은 정가 추정치.* | `/ledger` | 그대로 사용. **카탈로그에 없음**(라이선스 파일 없음), 원작자 카탈로그로 설치 |
 
 > **band 겹침 주의:** 프롬프트 위 영역(band)은 여러 mod가 함께 씁니다. token-weather와 replay-theater는 자기 내용을 그릴 때 다른 mod의 내용을 이어 붙이지 않아서,
 > 함께 켜면 context-bar나 blast-radius의 확인 버튼이 가려질 수 있습니다. 터미널을 144컬럼 이상으로 쓰면 blast-radius는 사이드 패널로 열려 영향을 받지 않습니다.
@@ -114,9 +127,26 @@ mod는 토큰을 쓰지 않고 항상 같은 방식으로 동작합니다.
 
 **처음엔 [5분 시작](#5분-시작)대로 `context-bar` + `blast-radius`로 시작하고, 필요하면 나머지를 추가하세요.**
 
-## 참고 링크
+## 출처와 감사
 
-- [Anthropic 공식 발표](https://claude.com/resources/articles/claude-code-mods)
-- [Claude Code mods 공식 문서](https://code.claude.com/docs/en/plugins/mods/overview)
-- [Claude Mods 디렉터리 (비공식, 수동 검증)](https://claude-mods.com/)
-- [빌트인 mod 소스 (diff, agents-md, sec-default, telemetry)](https://github.com/anthropics/claude-code/tree/main/mods)
+이 저장소의 mod는 제가 만든 것이 아니라, 아래 원작자들이 공개한 mod를 모아 **코드를 점검하고 일부를 팀 환경에 맞게 패치한 것**입니다.
+원작자 카탈로그에서 직접 설치하는 방법도 [USAGE.md §7](./USAGE.md#7-참고-원작자-카탈로그에서-직접-설치)에 그대로 남겨 두었습니다.
+
+| 원작자 | 저장소 | 가져온 mod | 라이선스 |
+| --- | --- | --- | --- |
+| Anthropic (Claude Code DevRel) | [anthropics/claude-code-playground](https://github.com/anthropics/claude-code-playground) | blast-radius, token-weather, replay-theater | Apache-2.0 |
+| Hamza Zafar | [hamzafer/claude-code-mods](https://github.com/hamzafer/claude-code-mods) | mission-control(패치), context-bar | MIT |
+| Mehmet Aras | [arasovic/claude-code-mods](https://github.com/arasovic/claude-code-mods) | change-ledger(패치), turn-timeline | MIT |
+| Chris Dwyer | [ccdwyer/loop-breaker](https://github.com/ccdwyer/loop-breaker), [ccdwyer/assertion-guardian](https://github.com/ccdwyer/assertion-guardian) | loop-breaker, assertion-guardian | MIT |
+| Arunjay | [Arunjay4213/claude-mods](https://github.com/Arunjay4213/claude-mods) | token-ledger (소개만, 저장소에 포함하지 않음) | README상 MIT |
+
+커밋, 원본 경로, 패치 내용은 [plugins/README.md](./plugins/README.md)에 있습니다. 각 mod 폴더에는 원본 라이선스 파일이 함께 들어 있습니다.
+
+조사하면서 참고한 자료입니다.
+
+- [Anthropic: Customize Claude Code with mods](https://claude.com/resources/articles/claude-code-mods) (공식 발표)
+- [Claude Code 공식 문서: mods](https://code.claude.com/docs/en/plugins/mods/overview), [플러그인 명령](https://code.claude.com/docs/en/plugins/cli-reference), [설정](https://code.claude.com/docs/en/settings-reference), [status line](https://code.claude.com/docs/en/statusline)
+- [anthropics/claude-code `mods/`](https://github.com/anthropics/claude-code/tree/main/mods) (내장 mod 소스)
+- [Claude Mods 디렉터리](https://claude-mods.com/) (비공식, 수동 검증한 mod 목록)
+- [Capital & Compute: Best Claude Code Mods](https://capitalandcompute.net/blog/best-claude-code-mods/), [Dashboard Mods](https://capitalandcompute.net/blog/claude-code-dashboard-mods/)
+- [Steve Kinney: Claude Code Mods](https://stevekinney.com/courses/ai-development-setup/claude-code-mods) (mods와 hooks 비교, 보안·거버넌스)

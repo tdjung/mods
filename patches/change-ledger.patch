@@ -1,0 +1,24 @@
+--- a/hooks/register.tsx
++++ b/hooks/register.tsx
+@@ -90,10 +90,10 @@
+ const refreshGit = async ($: EngineInterface) => {
+   const repo = await $.session.repo().catch(() => null)
+   if (!repo) return update($, git, () => null)
+-  const status = await $.process.run(['git', 'status', '--porcelain=v1', '--branch'], { cwd: repo.root })
++  const status = await $.process.run(['git', '--no-optional-locks', 'status', '--porcelain=v1', '--branch', '-uno'], { cwd: repo.root, timeoutMs: 5000 })
+   if (status.exitCode !== 0) return
+   // A repository without a first commit has no HEAD to diff against; its files are all new.
+-  const numstat = await $.process.run(['git', 'diff', '--numstat', 'HEAD'], { cwd: repo.root })
++  const numstat = await $.process.run(['git', '--no-optional-locks', 'diff', '--numstat', 'HEAD'], { cwd: repo.root, timeoutMs: 5000 })
+   const counts = numstat.exitCode === 0 ? parseNumstat(numstat.stdout) : new Map<string, { added: number; removed: number }>()
+   const s = parseStatus(status.stdout)
+   const changed: LedgerGitFile[] = s.entries.map(f => ({ ...f, ...counts.get(f.path) }))
+@@ -142,7 +142,7 @@
+   })
+ 
+   on('command.run', { command: 'changes' }, async $ => {
+-    await refreshGit($)
++    await refreshGit($).catch(() => {})
+     const opened = await $.ui.open({ id: PANE, title: 'Changes' })
+     return { text: opened.isPlaced ? 'Changes pane opened.' : `Changes pane is waiting: ${opened.reason}` }
+   })

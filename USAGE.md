@@ -8,11 +8,12 @@
 ## 목차
 
 1. [사전 확인](#1-사전-확인)
-2. [설치: 인터넷 가능 환경](#2-설치-인터넷-가능-환경)
+2. [설치: 팀 카탈로그(team-mods)](#2-설치-팀-카탈로그team-mods)
 3. [설치: 폐쇄망](#3-설치-폐쇄망)
 4. [Mod별 사용법](#4-mod별-사용법)
 5. [보안 체크리스트](#5-보안-체크리스트)
 6. [끄기, 제거, 문제 해결](#6-끄기-제거-문제-해결)
+7. [참고: 원작자 카탈로그에서 직접 설치](#7-참고-원작자-카탈로그에서-직접-설치)
 
 ---
 
@@ -52,171 +53,124 @@ telemetry와 함께 Claude Code의 다른 비필수 외부 통신도 꺼집니�
 
 ---
 
-## 2. 설치: 인터넷 가능 환경
+## 2. 설치: 팀 카탈로그(team-mods)
 
-셸에서 실행합니다. (Claude Code 안에서 `/plugin` 메뉴로 해도 같습니다.)
-설치 후 Claude Code를 재시작하거나, 열린 세션에서 `/reload-plugins`를 실행합니다.
+추천 mod 9개는 이 저장소의 `plugins/` 폴더에 **점검한 버전 그대로** 들어 있고, mission-control과 change-ledger는 **패치가 이미 적용돼** 있습니다.
+저장소를 받아 카탈로그로 한 번 등록하면, 원작자 저장소를 따로 찾을 필요 없이 `install`만 하면 됩니다. (token-ledger는 라이선스 파일이 없어 넣지 않았습니다. 2-6 참고)
 
-### 2-1. mission-control
+출처, 커밋, 패치 내용은 [plugins/README.md](./plugins/README.md)에 있습니다.
 
-```bash
-claude plugin marketplace add hamzafer/claude-code-mods
-claude plugin install mission-control@claude-code-mods
-```
-
-### 2-2. change-ledger, turn-timeline
+### 2-1. 저장소 받기
 
 ```bash
-claude plugin marketplace add arasovic/claude-code-mods
-claude plugin install change-ledger@claude-code-mods
-claude plugin install turn-timeline@claude-code-mods
+git clone https://github.com/tdjung/mods.git ~/team-mods   # 폐쇄망은 사내 Git 미러 주소로 (3장)
 ```
 
-> **마켓플레이스 이름 충돌 주의:** 2-1(hamzafer)과 2-2(arasovic)는 마켓플레이스 이름이 둘 다 `claude-code-mods`입니다.
-> 이미 하나가 등록돼 있으면 다른 하나의 `add`가 충돌합니다.
->
-> ```bash
-> claude plugin marketplace list                      # 등록된 마켓플레이스 확인
-> claude plugin marketplace remove claude-code-mods   # 필요 시 제거
-> ```
->
-> 둘 다 쓰려면 한쪽은 마켓플레이스로 설치하고, 다른 쪽은 [3장](#3-설치-폐쇄망)의 로컬 폴더 방식으로 로드하세요.
+> **이 폴더를 지우거나 옮기지 마세요.** 폴더로 등록한 카탈로그는 복사본을 만들지 않고 **이 폴더를 그대로 읽어서** 실행합니다.
 
-### 2-3. Loop Breaker, Assertion Guardian
+### 2-2. 카탈로그 등록 (한 번만)
 
 ```bash
-claude plugin marketplace add ccdwyer/claude-mods
-claude plugin install loop-breaker@ccdwyer-mods
-claude plugin install assertion-guardian@ccdwyer-mods
+claude plugin marketplace add ~/team-mods
+claude plugin marketplace list    # team-mods 가 보이면 성공
 ```
 
-### 2-4. blast-radius, token-weather, replay-theater (Anthropic 예제)
-
-세 개 모두 같은 Anthropic 예제 마켓플레이스에 있습니다. 마켓플레이스 파일이 저장소 루트가 아닌 하위 폴더에 있어서, clone한 뒤 경로로 추가합니다.
+### 2-3. 원하는 mod 설치
 
 ```bash
-git clone https://github.com/anthropics/claude-code-playground.git
-cd claude-code-playground/claude-code/mods
-claude plugin marketplace add ./
-claude plugin install blast-radius@claude-code-playground-mods --scope user
-claude plugin install token-weather@claude-code-playground-mods --scope user    # 선택
-claude plugin install replay-theater@claude-code-playground-mods --scope user   # 선택
+# 처음 시작 추천
+claude plugin install context-bar@team-mods
+claude plugin install blast-radius@team-mods
+
+# 필요하면 추가
+claude plugin install mission-control@team-mods      # 패치 적용본
+claude plugin install change-ledger@team-mods        # 패치 적용본
+claude plugin install turn-timeline@team-mods
+claude plugin install loop-breaker@team-mods
+claude plugin install assertion-guardian@team-mods
+claude plugin install token-weather@team-mods        # 다른 mod 표시를 가릴 수 있음
+claude plugin install replay-theater@team-mods       # 다른 mod 표시를 가릴 수 있음
 ```
+
+설치 후 열려 있는 Claude Code에서 `/reload-plugins`를 실행하면 재시작 없이 반영됩니다. 세션 안의 `/plugin` 화면으로 설치했다면 화면을 닫을 때 자동으로 반영됩니다.
 
 > token-weather와 replay-theater는 프롬프트 위 영역에서 다른 mod의 표시를 가릴 수 있습니다. 함께 쓰면 터미널을 144컬럼 이상으로 쓰세요. ([SECURITY.md](./SECURITY.md#공통-주의-band프롬프트-위-영역를-독차지하는-mod))
 
-> hamzafer 저장소에도 같은 이름의 `blast-radius`가 있지만 **다른 작성자의 다른 프로그램**입니다. 위의 Anthropic 것을 쓰세요.
-
-### 2-5. context-bar
-
-mission-control과 같은 hamzafer 마켓플레이스입니다. 2-1을 했다면 `install`만 하면 됩니다.
+### 2-4. 설치 확인
 
 ```bash
-claude plugin marketplace add hamzafer/claude-code-mods   # 2-1에서 했다면 생략
-claude plugin install context-bar@claude-code-mods
+claude plugin list
 ```
 
-### 2-6. token-ledger
+mod마다 `Version`, `Read from`(읽는 폴더), `Status`가 나옵니다. 패치본은 버전이 `-team.1`로 끝납니다(예: `mission-control` `0.1.2-team.1`).
+
+### 2-5. 업데이트
+
+카탈로그가 저장소 폴더를 그대로 읽기 때문에, 저장소를 최신으로 받기만 하면 됩니다.
+
+```bash
+cd ~/team-mods && git pull
+```
+
+그다음 열려 있는 세션에서 `/reload-plugins`를 실행하세요. 새 버전은 저장소 관리자가 점검과 패치를 마친 뒤에만 올라옵니다. ([plugins/README.md](./plugins/README.md#원본을-새-버전으로-올릴-때))
+
+### 2-6. token-ledger (카탈로그에 없음)
+
+README에는 MIT라고 적혀 있지만 라이선스 파일이 없어 팀 저장소에 복사하지 않았습니다. 쓰려면 원작자([Arunjay4213/claude-mods](https://github.com/Arunjay4213/claude-mods)) 카탈로그에서 직접 설치합니다(인터넷 필요).
 
 ```bash
 claude plugin marketplace add Arunjay4213/claude-mods
 claude plugin install token-ledger@claude-mods
 ```
 
-### 2-7. 설치 확인
+### 2-7. 원작자 카탈로그에서 직접 설치하려면
 
-Claude Code에서 `/plugin`을 열면 탭 아래 흐린 줄에 활성화된 mod 이름이 표시됩니다.
+팀 카탈로그의 mod는 모두 원작자의 작업을 가져온 것입니다. 원작자 카탈로그에서 최신 버전을 직접 설치하는 방법은 [7장](#7-참고-원작자-카탈로그에서-직접-설치)에 그대로 남겨 두었습니다.
+다만 버전이 고정되지 않아 점검하지 않은 코드가 설치될 수 있고, 팀 패치도 적용되지 않습니다.
 
 ---
 
 ## 3. 설치: 폐쇄망
 
-폐쇄망에서는 GitHub 마켓플레이스에 접근할 수 없으므로, **인터넷 PC에서 소스를 받아 반입한 뒤 로컬 폴더로 로드**합니다.
+팀 카탈로그는 mod 코드가 모두 저장소 안에 있어서, **저장소만 반입하면 설치 중에 외부에 접속하지 않습니다.**
 추천 mod 모두 네트워크 호출이 없어 반입 후 정상 동작합니다.
 
-### 3-1. 인터넷 PC에서 준비
+### 3-1. 사내 Git에 미러링 (권장)
+
+인터넷 PC에서 한 번 미러를 만들고 사내 Git으로 올립니다.
 
 ```bash
-mkdir -p ~/mods-src && cd ~/mods-src
-git clone https://github.com/hamzafer/claude-code-mods.git hamzafer-mods
-git clone https://github.com/arasovic/claude-code-mods.git arasovic-mods
-git clone https://github.com/ccdwyer/loop-breaker.git
-git clone https://github.com/ccdwyer/assertion-guardian.git
-git clone https://github.com/anthropics/claude-code-playground.git
-git clone https://github.com/Arunjay4213/claude-mods.git    arunjay-mods
-
-# 반입할 버전(커밋)을 기록해둔다
-for d in */; do echo "$d $(git -C "$d" rev-parse HEAD)"; done > VERSIONS.txt
+git clone --mirror https://github.com/tdjung/mods.git
+cd mods.git && git push --mirror <사내 Git 주소>/mods.git
 ```
 
-각 mod 폴더는 `.claude-plugin/plugin.json`이 들어 있는 폴더입니다. 저장소마다 위치가 다르니 아래로 찾으세요.
+이후 팀원은 2장과 같은 방법을 쓰되, 2-1의 주소만 사내 Git으로 바꿉니다.
+
+사내 Git이 없다면 `git bundle create team-mods.bundle --all`로 파일 하나로 만들어 반입한 뒤 `git clone team-mods.bundle ~/team-mods`로 풀어도 됩니다.
+
+### 3-2. Docker 이미지에 넣기 (선택)
+
+팀원 모두 Docker를 쓰므로, 이미지에 저장소를 넣어 두면 받는 단계가 사라집니다.
+
+```dockerfile
+RUN git clone <사내 Git 주소>/mods.git /opt/team-mods
+ENV CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+```
+
+팀원은 컨테이너 안에서 `claude plugin marketplace add /opt/team-mods`와 `install`만 하면 됩니다.
+카탈로그 등록 정보는 `~/.claude` 아래에 저장되므로, 컨테이너를 새로 만들 때마다 지워진다면 `~/.claude`를 볼륨으로 유지하세요.
+
+### 3-3. 카탈로그 없이 폴더로 바로 로드
+
+설치하지 않고 이번 실행에만 쓰려면 `--plugin-dir`를 씁니다. **여러 번 붙일 수 있습니다.**
 
 ```bash
-find ~/mods-src -path '*/.claude-plugin/plugin.json' | sed 's#/.claude-plugin/plugin.json##'
+claude --plugin-dir ~/team-mods/plugins/context-bar --plugin-dir ~/team-mods/plugins/blast-radius
 ```
 
-반입 전에 각 mod 폴더에 대해 [5장 보안 체크리스트](#5-보안-체크리스트)의 `claude plugin validate`를 실행하고 결과를 함께 보관하세요.
-
-### 3-2. 폐쇄망 PC에 배치
-
-반입한 mod 폴더를 고정 경로에 둡니다. 예:
-
-```
-~/claude-mods/
-├── mission-control/
-├── change-ledger/
-├── turn-timeline/
-├── loop-breaker/
-├── assertion-guardian/
-├── blast-radius/
-├── context-bar/
-└── token-ledger/
-```
-
-### 3-3. 로드 방법
-
-**방법 A. 한 세션만 써보기** (처음 테스트할 때 권장)
-
-```bash
-claude --plugin-dir ~/claude-mods/mission-control
-```
-
-이 방식은 파일을 저장할 때마다 mod를 다시 로드하므로, mod를 수정·개발할 때도 씁니다.
-
-**방법 B. 항상 로드하기**
-
-`CLAUDE_CODE_PLUGIN_DIRS` 환경변수에 mod 폴더 경로를 지정합니다.
-`~/.claude/settings.json`의 `env`에 넣으면 매번 적용됩니다.
-
-```json
-{
-  "env": {
-    "CLAUDE_CODE_PLUGIN_DIRS": "/home/<사용자>/claude-mods/mission-control"
-  }
-}
-```
-
-> 여러 폴더를 한 번에 지정하는 구분자 문법은 설치된 버전의 공식 문서([mods overview](https://code.claude.com/docs/en/plugins/mods/overview))에서 확인하세요.
-
-**방법 C. 로컬 마켓플레이스로 설치하기**
-
-마켓플레이스 파일의 플러그인 출처가 **로컬 경로**인 저장소는 받아온 폴더를 그대로 마켓플레이스로 등록할 수 있습니다.
-hamzafer, arasovic, Arunjay4213 저장소 루트와 Anthropic의 `claude-code/mods` 폴더가 여기에 해당합니다.
-
-> **Loop Breaker, Assertion Guardian은 이 방법이 안 됩니다.** ccdwyer 마켓플레이스는 플러그인 출처가 GitHub로 적혀 있어
-> 폐쇄망에서 설치에 실패합니다. 이 둘은 방법 A나 B로 폴더를 직접 로드하세요. ccdwyer의 `install.sh`도 GitHub에 접속하므로 쓰지 마세요.
-
-```bash
-cd ~/mods-src/claude-code-playground/claude-code/mods
-claude plugin marketplace add ./
-claude plugin install blast-radius@claude-code-playground-mods --scope user
-```
-
-### 3-4. 팀 배포 권장 방식
-
-1. 한 사람이 검토(3-1, 5장)를 끝낸 버전을 **사내 Git 저장소**에 올립니다.
-2. 팀원은 그 사본만 받아서 3-2, 3-3대로 로드합니다.
-3. 업데이트할 때도 같은 검토를 다시 거칩니다.
+- 이 방식은 파일을 저장할 때마다 mod를 다시 로드하므로, mod를 수정·개발할 때도 씁니다.
+- 같은 이름의 mod가 설치돼 있으면 `--plugin-dir` 쪽이 우선합니다.
+- 항상 로드하려면 `CLAUDE_CODE_PLUGIN_DIRS` 환경변수를 쓸 수 있습니다. 여러 폴더를 지정하는 구분자는 설치된 버전의 [공식 문서](https://code.claude.com/docs/en/plugins/mods/overview)에서 확인하세요.
 
 ---
 
@@ -239,11 +193,7 @@ claude plugin install blast-radius@claude-code-playground-mods --scope user
 **Linux에서 주의할 점**
 
 - **Code 뷰(`c`, `/mission code`)는 Linux에서 동작하지 않습니다.** 파일 맵을 그리려면 macOS, `/Applications`의 Google Chrome, 이미지 표시 터미널이 필요합니다. Linux에서는 Code 뷰를 열면 지도 대신 안내 메시지가 나옵니다. Who 뷰와 band는 정상 동작합니다.
-- **파일을 수정한 턴이 끝날 때마다 수정 코드 조각을 Haiku로 보냅니다.** 이 요약은 Code 뷰 카드에만 쓰이는데 Linux에서는 Code 뷰가 그려지지 않으므로, 비용만 들고 쓸모가 없습니다. 끄는 설정이 없으니 반입 전에 `hooks/register.tsx`의 아래 한 줄을 지우세요. ([SECURITY.md](./SECURITY.md#mission-control-modsmission-controlhooksregistertsx) 참고)
-
-  ```diff
-  -      void explain($, t, new Map(changes)).catch(() => {})
-  ```
+- **팀 카탈로그 버전은 패치돼 있습니다**(`0.1.2-team.1`). 원본은 파일을 수정한 턴이 끝날 때마다 수정 코드 조각을 Haiku로 보내는데, 이 요약은 macOS 전용 Code 뷰에만 쓰여서 Linux에서는 비용만 들었습니다. 팀 버전에서는 이 호출을 지웠습니다. ([patches/mission-control.patch](./patches/mission-control.patch), [SECURITY.md](./SECURITY.md#mission-control-modsmission-controlhooksregistertsx))
 - 트리는 최대 300행까지 유지하고, 넘으면 오래된 툴 호출부터 버립니다.
 - 다음 턴이 시작될 때 아직 실행 중인 백그라운드 서브에이전트는 새 트리로 이어집니다.
 
@@ -261,6 +211,7 @@ claude plugin install blast-radius@claude-code-playground-mods --scope user
 
 **주의할 점**
 
+- **팀 카탈로그 버전은 패치돼 있습니다**(`0.1.5-team.1`). git 명령이 최대 5초만 기다리고, `git status`가 추적하지 않는 파일을 훑지 않습니다(`-uno`). 그래서 셸 명령으로 **새로 만든** 파일은 Working tree에 나오지 않습니다. ([patches/change-ledger.patch](./patches/change-ledger.patch))
 - **Edit/Write 툴로 바뀐 파일만 Edits에 기록됩니다.** `sed`, 레지스터 맵 생성 스크립트, 코드 생성기 등 셸 명령으로 바뀐 파일은 Edits에 없고 Working tree에만 `○`로 나옵니다. RTL·펌웨어에서 생성 스크립트를 많이 쓴다면 Working tree 쪽을 같이 보세요.
 - **git 저장소 안에서 Claude Code를 시작해야** Working tree가 보입니다.
 - ahead/behind는 마지막 `git fetch` 기준입니다(원격에 접속하지 않음).
@@ -387,7 +338,9 @@ claude plugin install blast-radius@claude-code-playground-mods --scope user
 
 **주의할 점**
 
-- 금액은 Claude Code가 계산한 세션 비용의 변화량입니다. **`modelPricing` 설정이 없으면 정가 기준 추정치**라 실제 엔터프라이즈 청구액과 다를 수 있습니다. 회사 계약 단가가 있다면 `modelPricing`을 설정하세요.
+- 금액은 Claude Code가 계산한 세션 비용의 변화량입니다. **`modelPricing` 설정이 없으면 정가 기준 추정치**라 실제 엔터프라이즈 청구액과 다를 수 있습니다.
+- `modelPricing`은 **managed settings에서만 읽힙니다.** 각자의 `~/.claude/settings.json`에 넣으면 무시되므로, Docker 이미지의 `/etc/claude-code/managed-settings.json`에 넣어야 합니다. 게이트웨이 뒤의 모델 ID(open weight 포함)를 키로 써서 사내 단가를 지정할 수 있습니다. ([설정 문서](https://code.claude.com/docs/en/settings-reference))
+- 게이트웨이가 open weight 모델에 Claude 모델 이름을 붙여 쓰면 Claude 정가로 계산돼 금액이 부풀려 보입니다. 금액보다 **토큰 수와 캐시 적중률**을 기준으로 보는 걸 권장합니다.
 - 서브에이전트 비용이 메인 턴 행에 섞일 수 있습니다.
 - 첫 턴은 기준값이 잡힌 뒤부터 금액이 계산됩니다.
 
@@ -470,7 +423,7 @@ chmod +x ~/.claude/statusline-wrap.sh
 기존 표시 뒤에 `· ctx 23%`가 붙습니다. 되돌리려면 `command`를 원래 경로로 바꾸면 됩니다.
 
 - 컨테이너에 `jq`가 설치돼 있어야 합니다.
-- 비용도 붙이려면 `.cost.total_cost_usd`를 같은 방식으로 읽으면 됩니다. 단 팀 환경에는 `modelPricing`이 없어서 **정가 기준 추정치**입니다.
+- 비용도 붙이려면 `.cost.total_cost_usd`를 같은 방식으로 읽으면 됩니다. 단 팀 환경에는 `modelPricing`이 없어서 **정가 기준 추정치**입니다([4-8](#4-8-token-ledger-턴별-비용) 참고).
 - 필드 목록은 [status line 문서](https://code.claude.com/docs/en/statusline)를 보세요. `rate_limits.spend_limit`은 Claude apps gateway 전용이라, `ANTHROPIC_BASE_URL`로 연결하는 팀 환경에서는 값이 없을 가능성이 큽니다.
 
 ---
@@ -515,8 +468,8 @@ claude plugin validate ./<mod 폴더>
 ### 6-1. 잠깐 끄기 / 다시 켜기
 
 ```bash
-claude plugin disable token-weather@claude-code-playground-mods
-claude plugin enable  token-weather@claude-code-playground-mods
+claude plugin disable token-weather@team-mods
+claude plugin enable  token-weather@team-mods
 ```
 
 - Claude Code 안에서는 `/plugin` → Installed 탭에서 끄고 켤 수 있습니다.
@@ -526,7 +479,7 @@ claude plugin enable  token-weather@claude-code-playground-mods
 ### 6-2. 완전히 제거하기
 
 ```bash
-claude plugin uninstall token-weather@claude-code-playground-mods
+claude plugin uninstall token-weather@team-mods
 ```
 
 - 기본으로 `user` 범위에서 지웁니다. 다른 범위에 설치했다면 `--scope project` 처럼 지정하세요.
@@ -536,25 +489,27 @@ claude plugin uninstall token-weather@claude-code-playground-mods
 
 | Mod | 명령 |
 | --- | --- |
-| blast-radius | `claude plugin uninstall blast-radius@claude-code-playground-mods` |
-| token-weather | `claude plugin uninstall token-weather@claude-code-playground-mods` |
-| replay-theater | `claude plugin uninstall replay-theater@claude-code-playground-mods` |
-| mission-control | `claude plugin uninstall mission-control@claude-code-mods` |
-| context-bar | `claude plugin uninstall context-bar@claude-code-mods` |
-| change-ledger | `claude plugin uninstall change-ledger@claude-code-mods` |
-| turn-timeline | `claude plugin uninstall turn-timeline@claude-code-mods` |
-| Loop Breaker | `claude plugin uninstall loop-breaker@ccdwyer-mods` |
-| Assertion Guardian | `claude plugin uninstall assertion-guardian@ccdwyer-mods` |
-| token-ledger | `claude plugin uninstall token-ledger@claude-mods` |
+| blast-radius | `claude plugin uninstall blast-radius@team-mods` |
+| token-weather | `claude plugin uninstall token-weather@team-mods` |
+| replay-theater | `claude plugin uninstall replay-theater@team-mods` |
+| mission-control | `claude plugin uninstall mission-control@team-mods` |
+| context-bar | `claude plugin uninstall context-bar@team-mods` |
+| change-ledger | `claude plugin uninstall change-ledger@team-mods` |
+| turn-timeline | `claude plugin uninstall turn-timeline@team-mods` |
+| Loop Breaker | `claude plugin uninstall loop-breaker@team-mods` |
+| Assertion Guardian | `claude plugin uninstall assertion-guardian@team-mods` |
+| token-ledger (카탈로그 밖) | `claude plugin uninstall token-ledger@claude-mods` |
+
+원작자 카탈로그로 설치했다면 `@` 뒤의 이름이 다릅니다. → [7-6](#7-6-원작자-카탈로그로-설치한-mod-제거)
 
 ### 6-3. 카탈로그(마켓플레이스)까지 지우기
 
 ```bash
 claude plugin marketplace list                        # 등록된 카탈로그 이름 확인
-claude plugin marketplace remove claude-code-playground-mods
+claude plugin marketplace remove team-mods
 ```
 
-> **주의:** 카탈로그를 지우면 **그 카탈로그에서 설치한 mod가 모두 함께 제거됩니다.** 예를 들어 `claude-code-mods`를 지우면 mission-control과 context-bar가 같이 사라집니다.
+> **주의:** 카탈로그를 지우면 **그 카탈로그에서 설치한 mod가 모두 함께 제거됩니다.** `team-mods`를 지우면 팀 카탈로그로 설치한 mod 9개가 전부 사라집니다.
 > mod 하나만 빼고 싶을 때는 6-2의 `uninstall`을 쓰세요. 이름은 GitHub 저장소 이름이 아니라 `marketplace list`에 나오는 이름입니다.
 
 ### 6-4. 폴더로 로드한 mod (폐쇄망 방식)
@@ -590,6 +545,79 @@ claude plugin marketplace remove claude-code-playground-mods
 | blast-radius 버튼이 안 보이고 10분 뒤 거부 | 다른 mod가 band를 쓰는 중. 터미널을 넓혀 사이드 패널로 열리게 하기 |
 | `marketplace add`가 충돌 | 같은 이름(`claude-code-mods`) 마켓플레이스가 이미 있음(2-2 참고) |
 | Claude 동작이 이상해짐 | `claude --safe-mode`로 mod 없이 재현되는지 확인 후 mod를 하나씩 켜서 원인 찾기 |
+
+## 7. 참고: 원작자 카탈로그에서 직접 설치
+
+팀 카탈로그(`team-mods`)를 만들기 전에 정리했던 원래 설치 방법입니다. 각 mod를 만든 원작자의 카탈로그에서 바로 설치합니다.
+**팀에서는 2장의 팀 카탈로그를 권장합니다.** 이 방법은 원작자의 최신 버전을 써 보거나, 팀 카탈로그가 어디서 왔는지 확인할 때 참고하세요.
+
+| Mod | 원작자 카탈로그 등록 | 카탈로그 이름 | 팀 카탈로그와 다른 점 |
+| --- | --- | --- | --- |
+| mission-control, context-bar | `claude plugin marketplace add hamzafer/claude-code-mods` | `claude-code-mods` | mission-control은 **Haiku 호출 패치가 적용되지 않음** |
+| change-ledger, turn-timeline | `claude plugin marketplace add arasovic/claude-code-mods` | `claude-code-mods` | change-ledger는 **git timeout 패치가 적용되지 않음** |
+| loop-breaker, assertion-guardian | `claude plugin marketplace add ccdwyer/claude-mods` | `ccdwyer-mods` | 폐쇄망에서 설치 안 됨(아래 참고) |
+| blast-radius, token-weather, replay-theater | clone 후 `claude-code/mods` 폴더에서 `claude plugin marketplace add ./` | `claude-code-playground-mods` | 없음 |
+| token-ledger | `claude plugin marketplace add Arunjay4213/claude-mods` | `claude-mods` | 팀 카탈로그에 없음 |
+
+공통으로, 원작자 카탈로그는 **설치하는 시점의 최신 코드**를 받습니다. [SECURITY.md](./SECURITY.md)에서 점검한 커밋과 다를 수 있으니 설치 후 `claude plugin list`로 버전을 확인하세요.
+
+### 7-1. mission-control, context-bar (hamzafer)
+
+```bash
+claude plugin marketplace add hamzafer/claude-code-mods
+claude plugin install mission-control@claude-code-mods
+claude plugin install context-bar@claude-code-mods
+```
+
+hamzafer 저장소에도 `blast-radius`가 있지만 Anthropic 것과 **다른 작성자의 다른 프로그램**이고 점검하지 않았습니다.
+
+### 7-2. change-ledger, turn-timeline (arasovic)
+
+```bash
+claude plugin marketplace add arasovic/claude-code-mods
+claude plugin install change-ledger@claude-code-mods
+claude plugin install turn-timeline@claude-code-mods
+```
+
+> **카탈로그 이름 충돌:** hamzafer와 arasovic 카탈로그는 이름이 둘 다 `claude-code-mods`라 동시에 등록할 수 없습니다.
+> `claude plugin marketplace list`로 확인하고, 둘 다 쓰려면 한쪽은 [3-3](#3-3-카탈로그-없이-폴더로-바로-로드)처럼 폴더로 로드하세요.
+> 팀 카탈로그는 이 둘을 `team-mods` 하나로 합쳐서 이 문제가 없습니다.
+
+### 7-3. Loop Breaker, Assertion Guardian (ccdwyer)
+
+```bash
+claude plugin marketplace add ccdwyer/claude-mods
+claude plugin install loop-breaker@ccdwyer-mods
+claude plugin install assertion-guardian@ccdwyer-mods
+```
+
+> ccdwyer 카탈로그는 각 mod의 출처가 GitHub(`"source": "github"`)로 적혀 있어, 받아온 폴더를 `marketplace add ./`로 등록해도 **폐쇄망에서는 설치가 실패합니다.**
+> ccdwyer의 `install.sh`도 GitHub에 접속합니다. 폐쇄망에서는 팀 카탈로그를 쓰세요.
+
+### 7-4. blast-radius, token-weather, replay-theater (Anthropic DevRel 예제)
+
+카탈로그 파일이 저장소 루트가 아닌 하위 폴더에 있어서, clone한 뒤 경로로 등록합니다.
+
+```bash
+git clone https://github.com/anthropics/claude-code-playground.git
+cd claude-code-playground/claude-code/mods
+claude plugin marketplace add ./
+claude plugin install blast-radius@claude-code-playground-mods --scope user
+claude plugin install token-weather@claude-code-playground-mods --scope user
+claude plugin install replay-theater@claude-code-playground-mods --scope user
+```
+
+### 7-5. token-ledger (Arunjay4213)
+
+```bash
+claude plugin marketplace add Arunjay4213/claude-mods
+claude plugin install token-ledger@claude-mods
+```
+
+### 7-6. 원작자 카탈로그로 설치한 mod 제거
+
+이름 뒤의 카탈로그만 다릅니다. 예: `claude plugin uninstall mission-control@claude-code-mods`, `claude plugin uninstall loop-breaker@ccdwyer-mods`.
+카탈로그를 지우면(`claude plugin marketplace remove claude-code-mods`) 그 카탈로그로 설치한 mod가 모두 함께 제거됩니다.
 
 ## 참고
 

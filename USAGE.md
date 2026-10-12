@@ -26,21 +26,7 @@ claude --version   # 2.1.287 이상이어야 함
 
 폐쇄망은 업데이트가 수동이므로 먼저 버전부터 확인하세요.
 
-### 1-2. 회사 관리 설정(managed settings)
-
-IT에서 배포한 관리 설정에 아래 항목이 켜져 있으면 개인 mod가 로드되지 않습니다.
-
-| 설정 | 효과 |
-| --- | --- |
-| `allowManagedModsOnly` | 조직이 등록한 mod만 허용, 개인 mod 차단 |
-| `disableSideloadFlags` | `--plugin-dir` 사용 차단 |
-| `disableAllHooks` | 모든 mod와 settings hook 차단 |
-
-설치했는데 mod가 안 보이면 이것부터 의심하고 IT 담당자에게 문의하세요.
-반대로 관리 설정이 있는 머신에서는 빌트인 가드 `sec-default`가 먼저 로드되어,
-사용자 mod가 deny 규칙이나 관리형 hook을 우회하지 못하므로 더 안전합니다.
-
-### 1-3. 실행 환경
+### 1-2. 실행 환경
 
 - **터미널에서 `claude`로 실행**해야 패널이 그려집니다. VS Code 확장의 채팅 패널이나 `claude -p`에서는 mod가 동작은 하지만 화면에 아무것도 그려지지 않습니다.
 - **터미널 폭 144컬럼 이상**을 권장합니다. 사이드 패널(pane)은 이 폭 이상일 때 대화 옆에 열립니다. 좁으면 프롬프트 위 band로 표시되거나 열리지 않고 대기합니다.
@@ -458,7 +444,7 @@ claude plugin validate ./<mod 폴더>
 
 | 증상 | 확인할 것 |
 | --- | --- |
-| `/plugin`에 mod가 안 보임 | `claude --version` ≥ 2.1.287, 관리 설정(1-2), 설치 후 재시작 또는 `/reload-plugins` |
+| `/plugin`에 mod가 안 보임 | `claude --version` ≥ 2.1.287, 설치 후 재시작 또는 `/reload-plugins` |
 | 패널이 안 열림 / "waiting" 메시지 | 터미널 폭(`tput cols`) 144 이상인지, VS Code 채팅 패널이 아닌 터미널인지 |
 | `/mission code`에 지도가 안 나옴 | Linux에서는 정상. Who 뷰(`w`)를 사용 |
 | change-ledger Edits에 파일이 빠짐 | 셸 명령으로 바뀐 파일은 Working tree에만 표시됨 |

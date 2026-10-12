@@ -1,6 +1,6 @@
 # 추천 Mods 상세 사용법 (Linux)
 
-[README](./README.md)에서 소개한 6개 mod의 설치·사용·문제 해결 방법입니다.
+[README](./README.md)에서 소개한 8개 mod의 설치·사용·문제 해결 방법입니다. 코드 점검 결과와 권장 패치는 [SECURITY.md](./SECURITY.md)를 보세요.
 팀 환경인 **Linux + 터미널(CLI)** 기준으로 작성했습니다.
 
 > 기준일: 2026-10-12. mod API는 아직 릴리스마다 바뀔 수 있으니, 내용이 다르면 각 mod 저장소의 README를 우선하세요.
@@ -103,7 +103,25 @@ claude plugin marketplace add ./
 claude plugin install blast-radius@claude-code-playground-mods --scope user
 ```
 
-### 2-5. 설치 확인
+> hamzafer 저장소에도 같은 이름의 `blast-radius`가 있지만 **다른 작성자의 다른 프로그램**입니다. 위의 Anthropic 것을 쓰세요.
+
+### 2-5. context-bar
+
+mission-control과 같은 hamzafer 마켓플레이스입니다. 2-1을 했다면 `install`만 하면 됩니다.
+
+```bash
+claude plugin marketplace add hamzafer/claude-code-mods   # 2-1에서 했다면 생략
+claude plugin install context-bar@claude-code-mods
+```
+
+### 2-6. token-ledger
+
+```bash
+claude plugin marketplace add Arunjay4213/claude-mods
+claude plugin install token-ledger@claude-mods
+```
+
+### 2-7. 설치 확인
 
 Claude Code에서 `/plugin`을 열면 탭 아래 흐린 줄에 활성화된 mod 이름이 표시됩니다.
 
@@ -112,7 +130,7 @@ Claude Code에서 `/plugin`을 열면 탭 아래 흐린 줄에 활성화된 mod 
 ## 3. 설치: 폐쇄망
 
 폐쇄망에서는 GitHub 마켓플레이스에 접근할 수 없으므로, **인터넷 PC에서 소스를 받아 반입한 뒤 로컬 폴더로 로드**합니다.
-6개 mod 모두 네트워크 호출이 없어 반입 후 정상 동작합니다.
+8개 mod 모두 네트워크 호출이 없어 반입 후 정상 동작합니다.
 
 ### 3-1. 인터넷 PC에서 준비
 
@@ -120,8 +138,10 @@ Claude Code에서 `/plugin`을 열면 탭 아래 흐린 줄에 활성화된 mod 
 mkdir -p ~/mods-src && cd ~/mods-src
 git clone https://github.com/hamzafer/claude-code-mods.git hamzafer-mods
 git clone https://github.com/arasovic/claude-code-mods.git arasovic-mods
-git clone https://github.com/ccdwyer/claude-mods.git        ccdwyer-mods
+git clone https://github.com/ccdwyer/loop-breaker.git
+git clone https://github.com/ccdwyer/assertion-guardian.git
 git clone https://github.com/anthropics/claude-code-playground.git
+git clone https://github.com/Arunjay4213/claude-mods.git    arunjay-mods
 
 # 반입할 버전(커밋)을 기록해둔다
 for d in */; do echo "$d $(git -C "$d" rev-parse HEAD)"; done > VERSIONS.txt
@@ -146,7 +166,9 @@ find ~/mods-src -path '*/.claude-plugin/plugin.json' | sed 's#/.claude-plugin/pl
 ├── turn-timeline/
 ├── loop-breaker/
 ├── assertion-guardian/
-└── blast-radius/
+├── blast-radius/
+├── context-bar/
+└── token-ledger/
 ```
 
 ### 3-3. 로드 방법
@@ -176,7 +198,11 @@ claude --plugin-dir ~/claude-mods/mission-control
 
 **방법 C. 로컬 마켓플레이스로 설치하기**
 
-폴더에 마켓플레이스 파일이 있으면(예: blast-radius의 `claude-code/mods`, 각 저장소 루트) 로컬 경로를 마켓플레이스로 등록할 수 있습니다.
+마켓플레이스 파일의 플러그인 출처가 **로컬 경로**인 저장소는 받아온 폴더를 그대로 마켓플레이스로 등록할 수 있습니다.
+hamzafer, arasovic, Arunjay4213 저장소 루트와 Anthropic의 `claude-code/mods` 폴더가 여기에 해당합니다.
+
+> **Loop Breaker, Assertion Guardian은 이 방법이 안 됩니다.** ccdwyer 마켓플레이스는 플러그인 출처가 GitHub로 적혀 있어
+> 폐쇄망에서 설치에 실패합니다. 이 둘은 방법 A나 B로 폴더를 직접 로드하세요. ccdwyer의 `install.sh`도 GitHub에 접속하므로 쓰지 마세요.
 
 ```bash
 cd ~/mods-src/claude-code-playground/claude-code/mods
@@ -211,7 +237,11 @@ claude plugin install blast-radius@claude-code-playground-mods --scope user
 **Linux에서 주의할 점**
 
 - **Code 뷰(`c`, `/mission code`)는 Linux에서 동작하지 않습니다.** 파일 맵을 그리려면 macOS, `/Applications`의 Google Chrome, 이미지 표시 터미널이 필요합니다. Linux에서는 Code 뷰를 열면 지도 대신 안내 메시지가 나옵니다. Who 뷰와 band는 정상 동작합니다.
-- 턴이 끝나면 수정 내용을 Haiku 모델로 보내 파일별 한 줄 요약을 만듭니다(백그라운드, 사용량에 포함). 회사 모델 정책상 Haiku를 쓸 수 없으면 이 요약만 실패합니다.
+- **파일을 수정한 턴이 끝날 때마다 수정 코드 조각을 Haiku로 보냅니다.** 이 요약은 Code 뷰 카드에만 쓰이는데 Linux에서는 Code 뷰가 그려지지 않으므로, 비용만 들고 쓸모가 없습니다. 끄는 설정이 없으니 반입 전에 `hooks/register.tsx`의 아래 한 줄을 지우세요. ([SECURITY.md](./SECURITY.md#mission-control-modsmission-controlhooksregistertsx) 참고)
+
+  ```diff
+  -      void explain($, t, new Map(changes)).catch(() => {})
+  ```
 - 트리는 최대 300행까지 유지하고, 넘으면 오래된 툴 호출부터 버립니다.
 - 다음 턴이 시작될 때 아직 실행 중인 백그라운드 서브에이전트는 새 트리로 이어집니다.
 
@@ -327,6 +357,58 @@ claude plugin install blast-radius@claude-code-playground-mods --scope user
 - **SystemVerilog/Verilog testbench(`tb_*.sv` 등)와 C 유닛테스트는 인식하지 않습니다.** SV `assert property` 같은 구문도 검사 대상이 아닙니다.
 - **cocotb 테스트(`test_*.py`)는 Python `assert`로 인식되어 보호됩니다.**
 - SV testbench까지 보호하려면 이 mod를 참고해 팀용 버전을 만드는 것을 권장합니다.
+- **저장소 경로 주의:** 폴더 규칙을 절대경로 전체에 적용하므로, 저장소가 `/data/...` 아래에 있으면 폴더 기준 판별이 꺼집니다. 가능하면 `data`, `support`, `helpers`, `test` 같은 이름이 상위 경로에 없는 곳에 저장소를 두세요.
+
+### 4-7. context-bar: 컨텍스트를 카테고리별 막대로
+
+**명령:** `/context-bar` (숨기기/보이기, 선택은 다음 세션에도 유지)
+
+**표시되는 것**
+
+- 헤더: 사용 중인 토큰 / 전체 창 크기, 자동 compaction 시작 지점, 사용률 배지
+- 배지 색: compaction 지점 대비 **70% 이상 노랑, 90% 이상 빨강**
+- 막대: `/context`와 같은 분류(시스템 프롬프트, 시스템 툴, MCP 툴, 메모리 파일, skill, 메시지)별 색. 계속 늘어나는 "messages"는 주황색
+- 범례: 카테고리별 토큰 수와 비율
+
+**갱신 시점:** 세션 시작, 내 턴이 끝날 때, `/compact` 후. 서브에이전트 턴은 반영하지 않습니다.
+
+**이럴 때 유용:** 대화를 시작하기도 전에 컨텍스트가 크게 차 있다면 대부분 MCP 툴 정의나 메모리 파일입니다. 막대에서 "mcp tools"가 크면 프로젝트에서 안 쓰는 MCP 서버를 빼세요. 매 요청마다 함께 보내지는 고정 비용이 줄어듭니다.
+
+### 4-8. token-ledger: 턴별 비용
+
+**명령:** `/ledger` (패널 열기/닫기)
+
+**표시되는 것**
+
+- 프롬프트 아래 한 줄: 세션 비용, 직전 턴의 토큰과 캐시 비율
+- `/ledger` 패널: 턴마다 모델, 새 입력 토큰, 출력 토큰, 캐시 읽기/쓰기, 적중률, 소요 시간, 비용. 서브에이전트 턴은 `*` 표시. 최근 40행 표시
+
+**주의할 점**
+
+- 금액은 Claude Code가 계산한 세션 비용의 변화량입니다. **`modelPricing` 설정이 없으면 정가 기준 추정치**라 실제 엔터프라이즈 청구액과 다를 수 있습니다. 회사 계약 단가가 있다면 `modelPricing`을 설정하세요.
+- 서브에이전트 비용이 메인 턴 행에 섞일 수 있습니다.
+- 첫 턴은 기준값이 잡힌 뒤부터 금액이 계산됩니다.
+
+**이럴 때 유용:** 캐시 적중률이 갑자기 떨어지는 턴(모델 변경, 오래 쉰 뒤 등)을 찾아 비용이 튀는 원인을 확인할 때.
+
+### 4-9. mod 없이 status line에 context 표시
+
+context 사용률을 숫자로만 보고 싶다면 mod가 필요 없습니다. 기본 status line 스크립트가 받는 JSON에
+`context_window.used_percentage`와 `cost.total_cost_usd`가 들어 있습니다. mod가 아니라서 보안 검토 부담도 없습니다.
+
+```json
+// ~/.claude/settings.json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "jq -r '\"[\\(.model.display_name)] ctx \\(.context_window.used_percentage // 0)% · $\\(.cost.total_cost_usd // 0)\"'"
+  }
+}
+```
+
+- 서버에 `jq`가 설치돼 있어야 합니다.
+- Claude Code 안에서 `/statusline`을 입력하고 원하는 표시를 설명해도 대신 설정해 줍니다.
+- 사내 게이트웨이를 쓰면 `rate_limits.spend_limit.used_percentage`로 지출 한도 사용률도 표시할 수 있습니다. ([status line 문서](https://code.claude.com/docs/en/statusline))
 
 ---
 
@@ -347,7 +429,7 @@ claude plugin validate ./<mod 폴더>
 
 | `calls:`에서 볼 항목 | 의미 | 확인할 것 |
 | --- | --- | --- |
-| `$.http.fetch` | 네트워크 접속 | 6개 추천 mod에는 없어야 정상 |
+| `$.http.fetch` | 네트워크 접속 | 8개 추천 mod에는 없어야 정상 |
 | `$.process.run` | 프로그램 실행 | git, find, du 등 기능에 맞는 명령인지 |
 | `$.env.get` | 환경변수 읽기 | 키·토큰을 읽을 이유가 있는지 |
 | `tool.check` | 권한 판단 덮어쓰기 | 관찰용 mod라면 없어야 정상 |
@@ -389,4 +471,4 @@ claude plugin validate ./<mod 폴더>
 - [Claude Code mods 공식 문서](https://code.claude.com/docs/en/plugins/mods/overview)
 - [mods API 레퍼런스](https://code.claude.com/docs/en/plugins/mods/reference)
 - [관리자용 mod 설정](https://code.claude.com/docs/en/plugins/mods/admin)
-- 각 mod 상세: [mission-control](https://claude-mods.com/mission-control/) · [change-ledger](https://claude-mods.com/change-ledger/) · [turn-timeline](https://claude-mods.com/turn-timeline/) · [blast-radius](https://claude-mods.com/blast-radius/) · [Loop Breaker](https://claude-mods.com/loop-breaker/) · [Assertion Guardian](https://claude-mods.com/assertion-guardian/)
+- 각 mod 상세: [mission-control](https://claude-mods.com/mission-control/) · [change-ledger](https://claude-mods.com/change-ledger/) · [turn-timeline](https://claude-mods.com/turn-timeline/) · [blast-radius](https://claude-mods.com/blast-radius/) · [Loop Breaker](https://claude-mods.com/loop-breaker/) · [Assertion Guardian](https://claude-mods.com/assertion-guardian/) · [context-bar](https://claude-mods.com/context-bar/) · [token-ledger](https://claude-mods.com/token-ledger/)

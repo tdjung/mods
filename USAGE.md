@@ -1,6 +1,6 @@
 # 추천 Mods 상세 사용법 (Linux)
 
-[README](./README.md)에서 소개한 8개 mod의 설치·사용·문제 해결 방법입니다. 코드 점검 결과와 권장 패치는 [SECURITY.md](./SECURITY.md)를 보세요.
+[README](./README.md)에서 소개한 추천 mod의 설치·사용·문제 해결 방법입니다. 코드 점검 결과와 권장 패치는 [SECURITY.md](./SECURITY.md)를 보세요.
 팀 환경인 **Linux + 터미널(CLI)** 기준으로 작성했습니다.
 
 > 기준일: 2026-10-12. mod API는 아직 릴리스마다 바뀔 수 있으니, 내용이 다르면 각 mod 저장소의 README를 우선하세요.
@@ -90,16 +90,20 @@ claude plugin install loop-breaker@ccdwyer-mods
 claude plugin install assertion-guardian@ccdwyer-mods
 ```
 
-### 2-4. blast-radius
+### 2-4. blast-radius, token-weather, replay-theater (Anthropic 예제)
 
-마켓플레이스 파일이 저장소 루트가 아닌 하위 폴더에 있어서, clone한 뒤 경로로 추가합니다.
+세 개 모두 같은 Anthropic 예제 마켓플레이스에 있습니다. 마켓플레이스 파일이 저장소 루트가 아닌 하위 폴더에 있어서, clone한 뒤 경로로 추가합니다.
 
 ```bash
 git clone https://github.com/anthropics/claude-code-playground.git
 cd claude-code-playground/claude-code/mods
 claude plugin marketplace add ./
 claude plugin install blast-radius@claude-code-playground-mods --scope user
+claude plugin install token-weather@claude-code-playground-mods --scope user    # 선택
+claude plugin install replay-theater@claude-code-playground-mods --scope user   # 선택
 ```
+
+> token-weather와 replay-theater는 프롬프트 위 영역에서 다른 mod의 표시를 가릴 수 있습니다. 함께 쓰면 터미널을 144컬럼 이상으로 쓰세요. ([SECURITY.md](./SECURITY.md#공통-주의-band프롬프트-위-영역를-독차지하는-mod))
 
 > hamzafer 저장소에도 같은 이름의 `blast-radius`가 있지만 **다른 작성자의 다른 프로그램**입니다. 위의 Anthropic 것을 쓰세요.
 
@@ -128,7 +132,7 @@ Claude Code에서 `/plugin`을 열면 탭 아래 흐린 줄에 활성화된 mod 
 ## 3. 설치: 폐쇄망
 
 폐쇄망에서는 GitHub 마켓플레이스에 접근할 수 없으므로, **인터넷 PC에서 소스를 받아 반입한 뒤 로컬 폴더로 로드**합니다.
-8개 mod 모두 네트워크 호출이 없어 반입 후 정상 동작합니다.
+추천 mod 모두 네트워크 호출이 없어 반입 후 정상 동작합니다.
 
 ### 3-1. 인터넷 PC에서 준비
 
@@ -389,7 +393,49 @@ claude plugin install blast-radius@claude-code-playground-mods --scope user
 
 **이럴 때 유용:** 캐시 적중률이 갑자기 떨어지는 턴(모델 변경, 오래 쉰 뒤 등)을 찾아 비용이 튀는 원인을 확인할 때.
 
-### 4-9. mod 없이 status line에 context 표시
+### 4-9. token-weather: 컨텍스트 사용률 한 줄 요약
+
+**명령:** 없음 (자동 표시)
+
+프롬프트 위 한 줄에 날씨 아이콘, 사용률, 사용 토큰 / 전체 창, 최근 12턴 추이 그래프, 직전 턴 증가량을 보여줍니다.
+
+| 사용률 | 표시 |
+| --- | --- |
+| 25% 미만 | ☀ Clear |
+| 25~49% | ☁ Cloudy |
+| 50~74% | ☂ Showers |
+| 75~89% | ☇ Storm |
+| 90% 이상 | ↯ Compact soon |
+
+- 사용률은 **전체 창 크기** 기준입니다. compaction 지점 기준인 Claude Code 알림이나 context-bar보다 낮게 나옵니다.
+- 턴이 끝날 때만 갱신됩니다.
+- **context-bar와의 차이:** token-weather는 "얼마나, 얼마나 빨리" 차는지, context-bar는 "무엇이" 차지하는지 보여줍니다. 비용 원인을 찾으려면 context-bar가 낫습니다.
+
+### 4-10. replay-theater: 직전 턴 수정 다시 보기
+
+**명령:** `/replay` (또는 프롬프트 위 `Replay` 버튼, 단축키 `r`)
+
+- 직전 턴에서 Claude가 Edit·Write·MultiEdit로 바꾼 내용을 한 단계에 diff 하나씩 보여줍니다.
+- 패널에서 `p` 이전, `n` 다음, `c` 또는 Esc 닫기.
+- 툴 실행 전에 기록하므로, **거부되거나 실패한 수정도 목록에 나옵니다.**
+- change-ledger가 "세션 전체에서 어떤 파일이 얼마나" 바뀌었는지라면, replay-theater는 "직전 턴에서 정확히 무엇을" 바꿨는지 봅니다.
+
+### 4-11. 내장 mod 설정: agents-md 끄기 (권장)
+
+`agents-md`는 설치하지 않아도 켜져 있습니다. `CLAUDE.md`가 없는 프로젝트에서는 `/`부터 작업 폴더까지의 모든 `AGENTS.md`를 지시로 넣습니다.
+받아온 외부 저장소나 벤더 IP·SDK 폴더 안의 `AGENTS.md`가 지시가 되는 걸 막으려면 `~/.claude/settings.json`에 아래를 넣거나 `/config`의 "Project instructions"를 `claude-md`로 바꾸세요.
+
+```json
+{
+  "pluginConfigs": {
+    "agents-md@builtin": { "options": { "instructionFiles": "claude-md" } }
+  }
+}
+```
+
+프로젝트의 `.claude/settings.json`에서는 이 설정을 읽지 않습니다. 근거는 [SECURITY.md](./SECURITY.md#agents-md)를 보세요.
+
+### 4-12. mod 없이 status line에 context 표시
 
 context 사용률을 숫자로만 보고 싶다면 mod가 필요 없습니다. 기본 status line 스크립트가 받는 JSON에
 `context_window.used_percentage`와 `cost.total_cost_usd`가 들어 있습니다. mod가 아니라서 보안 검토 부담도 없습니다.
@@ -446,7 +492,7 @@ claude plugin validate ./<mod 폴더>
 
 | `calls:`에서 볼 항목 | 의미 | 확인할 것 |
 | --- | --- | --- |
-| `$.http.fetch` | 네트워크 접속 | 8개 추천 mod에는 없어야 정상 |
+| `$.http.fetch` | 네트워크 접속 | 추천 mod에는 없어야 정상 |
 | `$.process.run` | 프로그램 실행 | git, find, du 등 기능에 맞는 명령인지 |
 | `$.env.get` | 환경변수 읽기 | 키·토큰을 읽을 이유가 있는지 |
 | `tool.check` | 권한 판단 덮어쓰기 | 관찰용 mod라면 없어야 정상 |

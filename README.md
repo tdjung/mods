@@ -17,7 +17,7 @@ claude --version   # 2.1.287 이상
 
 **2. status line에 context % 붙이기 (mod 불필요)**
 
-기존 게이트웨이 status line을 지우지 않고 뒤에 덧붙입니다. → [USAGE.md §4-9](./USAGE.md#4-9-mod-없이-status-line에-context-표시)
+기존 게이트웨이 status line을 지우지 않고 뒤에 덧붙입니다. → [USAGE.md §4-12](./USAGE.md#4-12-mod-없이-status-line에-context-표시)
 
 **3. mod 두 개 설치: context-bar(컨텍스트 막대) + blast-radius(위험 명령 확인)**
 
@@ -71,32 +71,37 @@ mod는 토큰을 쓰지 않고 항상 같은 방식으로 동작합니다.
 
 ## 추천 mods
 
-8개 모두 **외부 네트워크 호출이 없고**, 공개 소스(MIT/Apache-2.0)이며, 코드를 직접 점검했습니다([SECURITY.md](./SECURITY.md)). 폐쇄망에서도 쓸 수 있습니다.
+모두 **외부 네트워크 호출이 없고**, 공개 소스(MIT/Apache-2.0)이며, 코드를 직접 점검했습니다. 폐쇄망에서도 쓸 수 있습니다.
+점검 결과의 근거와 권장 패치는 [SECURITY.md](./SECURITY.md)에 있습니다.
 
-### 가시성: Claude가 뭘 하고 있는지 보기
+### Anthropic 공식 제공
 
-| Mod | 설명 | 명령 |
-| --- | --- | --- |
-| [mission-control](https://claude-mods.com/mission-control/) | 메인 에이전트, 서브에이전트, 모든 툴 호출을 사이드 패널에 실시간 트리로 보여줍니다. 각 서브에이전트의 실행 시간, 툴 호출 수, 현재 상태(실행 중/실패)를 확인할 수 있습니다. *Linux에서는 Who 뷰만 지원(파일 맵 Code 뷰는 macOS 전용).* | `/mission` |
-| [change-ledger](https://claude-mods.com/change-ledger/) | 세션에서 수정한 모든 파일을 추가/삭제 줄 수, 어느 에이전트가 바꿨는지와 함께 보여주고, 아래에 git working tree를 표시합니다. | `/changes` |
-| [turn-timeline](https://claude-mods.com/turn-timeline/) | 현재 턴을 타임라인으로 그려 모델·툴·대기 시간 비율과 가장 느린 3단계를 보여줍니다. 시뮬레이션·빌드가 긴 작업의 병목 파악용. | `/timeline` |
+| 분류 | Mod | 설명 | 명령 | 점검 결과 |
+| --- | --- | --- | --- | --- |
+| 내장 | `diff` | 커밋하지 않은 변경 사항을 파일별로 패널에 보여줍니다. **설치 불필요**(Claude Code에 내장). | `/diff` | 그대로 사용. 패널이 열려 있으면 Bash 호출마다 저장소 전체 `git diff`가 돌아감 |
+| 내장 | `agents-md` | 프로젝트의 `AGENTS.md`를 `CLAUDE.md`처럼 지시 파일로 읽습니다. **설치 불필요**. | 자동 | **설정 권장.** `CLAUDE.md`가 없는 외부 저장소에서는 그 안의 `AGENTS.md`가 지시로 들어감 |
+| 안전장치 | [blast-radius](https://claude-mods.com/blast-radius/) | `rm -rf`, `git reset --hard`, force push 등을 실행 전에 멈추고, 영향받는 파일을 보여준 뒤 진행/취소를 기다립니다. (DevRel 예제) | 자동 | 사용, 한계 숙지. 변수 경로는 피해를 작게 표시, 우회 명령 다수 |
+| 비용·컨텍스트 | [token-weather](https://claude-mods.com/token-weather/) | 컨텍스트 사용률을 날씨 아이콘과 최근 12턴 추이로 프롬프트 위 한 줄에 보여줍니다. 한 턴에 급증한 순간을 잡기 좋습니다. (DevRel 예제) | 자동 | 그대로 사용. **다른 mod의 band를 가릴 수 있음** |
+| 가시성 | [replay-theater](https://claude-mods.com/replay-theater/) | 직전 턴에서 Claude가 수정한 파일을 diff 하나씩 넘겨봅니다. (DevRel 예제) | `/replay` | 그대로 사용. **다른 mod의 band를 가릴 수 있음** |
 
-### 안전장치: 사고 방지
+`telemetry`, `sec-default`도 내장이지만 사용자가 쓰는 기능이 아니라 SECURITY.md에서만 다룹니다.
 
-| Mod | 설명 | 명령 |
-| --- | --- | --- |
-| [blast-radius](https://claude-mods.com/blast-radius/) | Anthropic 공식 샘플. `rm -rf`, `git reset --hard`, force push 등을 실행 전에 멈추고, 영향받는 파일을 보여준 뒤 진행/취소를 기다립니다. | 자동 |
-| [Loop Breaker](https://claude-mods.com/loop-breaker/) | 같은 에러로 두 번 실패한 호출의 세 번째 시도와, 같은 파일을 두 버전 사이로 뒤집는 수정을 거부합니다. 합성·컴파일 에러를 같은 방식으로 반복해서 고치는 상황을 막아줍니다. | 자동 (`/unstick`) |
-| [Assertion Guardian](https://claude-mods.com/assertion-guardian/) | 테스트를 통과시키려고 assertion 삭제, skip 추가, 기대값 변경을 하는 수정을 거부합니다. *SystemVerilog testbench는 인식하지 못함(cocotb `test_*.py`는 인식).* | 자동 (`/allow-test-change`) |
+### 외부 개발자 제공
 
-### 비용·컨텍스트: 사용량이 새는 지점 보기
+| 분류 | Mod | 설명 | 명령 | 점검 결과 |
+| --- | --- | --- | --- | --- |
+| 가시성 | [mission-control](https://claude-mods.com/mission-control/) | 메인 에이전트, 서브에이전트, 모든 툴 호출을 사이드 패널에 실시간 트리로 보여줍니다. 각 서브에이전트의 실행 시간, 툴 호출 수, 현재 상태(실행 중/실패)를 확인할 수 있습니다. *Linux에서는 Who 뷰만 지원.* | `/mission` | **패치 후 사용.** 수정 턴마다 Haiku로 코드 조각 전송(Linux에선 쓸모없음) |
+| 가시성 | [change-ledger](https://claude-mods.com/change-ledger/) | 세션에서 수정한 모든 파일을 추가/삭제 줄 수, 어느 에이전트가 바꿨는지와 함께 보여주고, 아래에 git working tree를 표시합니다. | `/changes` | 사용, 패치 권장. 턴마다 git을 timeout 없이 실행 |
+| 가시성 | [turn-timeline](https://claude-mods.com/turn-timeline/) | 현재 턴을 타임라인으로 그려 모델·툴·대기 시간 비율과 가장 느린 3단계를 보여줍니다. 시뮬레이션·빌드가 긴 작업의 병목 파악용. | `/timeline` | 그대로 사용 |
+| 안전장치 | [Loop Breaker](https://claude-mods.com/loop-breaker/) | 같은 에러로 두 번 실패한 호출의 세 번째 시도와, 같은 파일을 두 버전 사이로 뒤집는 수정을 거부합니다. | 자동 (`/unstick`) | 사용. EDA 로그(시드 등)에서는 거의 동작 안 함 |
+| 안전장치 | [Assertion Guardian](https://claude-mods.com/assertion-guardian/) | 테스트를 통과시키려고 assertion 삭제, skip 추가, 기대값 변경을 하는 수정을 거부합니다. *cocotb `test_*.py`는 인식.* | 자동 (`/allow-test-change`) | 사용, RTL엔 효과 제한. SV testbench 미인식 |
+| 비용·컨텍스트 | [context-bar](https://claude-mods.com/context-bar/) | 컨텍스트 창을 카테고리별(시스템, MCP 툴, 메모리, 메시지) 막대로 보여주고, compaction 직전 70%/90%에서 노랑/빨강으로 바뀝니다. 컨텍스트를 많이 차지하는 MCP 서버를 찾는 데 유용합니다. | `/context-bar` | 그대로 사용 |
+| 비용·컨텍스트 | [token-ledger](https://claude-mods.com/token-ledger/) | 프롬프트 아래에 세션 비용, 직전 턴 비용, 캐시 적중률을 표시하고, 턴별 비용 표를 보여줍니다. *금액은 정가 추정치.* | `/ledger` | 그대로 사용 |
 
-| Mod | 설명 | 명령 |
-| --- | --- | --- |
-| [context-bar](https://claude-mods.com/context-bar/) | 컨텍스트 창을 카테고리별(시스템, MCP 툴, 메모리, 메시지) 막대로 프롬프트 위에 보여주고, compaction 직전 70%/90%에서 노랑/빨강으로 바뀝니다. 컨텍스트를 많이 차지하는 MCP 서버를 찾는 데 유용합니다. | `/context-bar` (숨기기/보이기) |
-| [token-ledger](https://claude-mods.com/token-ledger/) | 프롬프트 아래에 세션 비용, 직전 턴 비용, 캐시 적중률을 표시하고, 턴별 비용 표를 보여줍니다. *금액은 `modelPricing` 설정이 없으면 정가 추정치.* | `/ledger` |
+> **band 겹침 주의:** 프롬프트 위 영역(band)은 여러 mod가 함께 씁니다. token-weather와 replay-theater는 자기 내용을 그릴 때 다른 mod의 내용을 이어 붙이지 않아서,
+> 함께 켜면 context-bar나 blast-radius의 확인 버튼이 가려질 수 있습니다. 터미널을 144컬럼 이상으로 쓰면 blast-radius는 사이드 패널로 열려 영향을 받지 않습니다.
 
-> context 사용률을 status line에 숫자로만 띄우고 싶다면 mod 없이 기본 status line으로도 됩니다. ([USAGE.md §4-9](./USAGE.md#4-9-mod-없이-status-line에-context-표시))
+> context 사용률을 status line에 숫자로만 띄우고 싶다면 mod 없이 기본 status line으로도 됩니다. ([USAGE.md §4-12](./USAGE.md#4-12-mod-없이-status-line에-context-표시))
 
 **처음엔 [5분 시작](#5분-시작)대로 `context-bar` + `blast-radius`로 시작하고, 필요하면 나머지를 추가하세요.**
 

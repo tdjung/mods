@@ -1,6 +1,6 @@
 # 추천 Mods 보안 점검 결과
 
-추천한 8개 mod의 소스 코드를 **읽기만 해서** 점검한 결과입니다. 실행이나 설치는 하지 않았습니다.
+추천한 mod(Anthropic 공식 5개, 외부 7개)와 내장 mod의 소스 코드를 **읽기만 해서** 점검한 결과입니다. 실행이나 설치는 하지 않았습니다.
 기준은 팀 환경인 **Linux + 폐쇄망 + 엔터프라이즈 요금제**입니다.
 
 > 점검일: 2026-10-12. 아래 커밋 기준이며, 다른 버전을 반입하면 다시 점검해야 합니다.
@@ -10,16 +10,29 @@
 | --- | --- | --- |
 | [hamzafer/claude-code-mods](https://github.com/hamzafer/claude-code-mods) | `11abba8` | mission-control, context-bar |
 | [arasovic/claude-code-mods](https://github.com/arasovic/claude-code-mods) | `9f1bef6` | change-ledger, turn-timeline |
-| [anthropics/claude-code-playground](https://github.com/anthropics/claude-code-playground) | `569c528` | blast-radius |
+| [anthropics/claude-code-playground](https://github.com/anthropics/claude-code-playground) | `569c528` | blast-radius, token-weather, replay-theater |
 | [ccdwyer/loop-breaker](https://github.com/ccdwyer/loop-breaker) | `1eeaaba` | Loop Breaker |
 | [ccdwyer/assertion-guardian](https://github.com/ccdwyer/assertion-guardian) | `ae1de89` | Assertion Guardian |
 | [Arunjay4213/claude-mods](https://github.com/Arunjay4213/claude-mods) | `d4fffd7` | token-ledger |
-| [anthropics/claude-code](https://github.com/anthropics/claude-code/tree/main/mods) | `3deb873` | 빌트인 mod (telemetry 중심, [§4](#4-빌트인-mods)) |
+| [anthropics/claude-code](https://github.com/anthropics/claude-code/tree/main/mods) | `3deb873` | 내장 mod: diff, agents-md, telemetry, sec-default ([§4](#4-빌트인-mods)) |
+| [anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official) | `f359d43` | code-modernization (외부 통신 여부만, [§4](#4-빌트인-mods)) |
 
 ## 요약
 
-8개 모두 **외부 네트워크 호출, 런타임 코드 다운로드(dynamic import, eval), 환경변수의 비밀값 읽기가 없습니다.**
+추천 mod는 모두 **외부 네트워크 호출, 런타임 코드 다운로드(dynamic import, eval), 환경변수의 비밀값 읽기가 없습니다.**
 명령어 주입 경로도 찾지 못했습니다. 그대로 써도 되는 것과 패치하고 쓰면 좋은 것은 아래와 같습니다.
+
+### Anthropic 공식 제공
+
+| Mod | 판정 | 핵심 | 상세 |
+| --- | --- | --- | --- |
+| diff (내장) | 그대로 사용 | 외부 접근 없음. git만 5초 timeout으로 실행. 패널이 열려 있을 때 Bash 호출마다 저장소 전체 diff | [§4](#diff) |
+| agents-md (내장) | **설정 권장** | 외부 접근 없음. 단 `CLAUDE.md`가 없는 프로젝트에서는 `/`부터의 모든 `AGENTS.md`와 하위 폴더 것을 크기 제한 없이 지시로 넣음 | [§4](#agents-md) |
+| token-weather | 그대로 사용 | 외부 접근 없음. `$.session.usage()`만 읽음. 다른 mod의 band를 가릴 수 있음 | [§1](#token-weather) |
+| replay-theater | 그대로 사용 | 외부 접근 없음. 수정 내용을 메모리에만 보관. 다른 mod의 band를 가릴 수 있음 | [§1](#replay-theater) |
+| blast-radius | 사용, 한계 숙지 | 미리보기가 피해를 작게 보여줄 수 있음. 우회 명령 다수 | [§2](#blast-radius-claude-codemodsblast-radiushooksblast-radiusmjs) |
+
+### 외부 개발자 제공
 
 | Mod | 판정 | 핵심 |
 | --- | --- | --- |
@@ -30,7 +43,13 @@
 | mission-control | 사용, **패치 권장** | 파일을 수정한 턴마다 Haiku를 호출해 코드 조각을 보냄. Linux에서는 쓸모없음 |
 | Loop Breaker | 사용 | EDA 로그에서는 거의 동작하지 않음(잘못 막지는 않음) |
 | Assertion Guardian | 사용, RTL엔 효과 제한 | SV/Verilog testbench 미인식. `/data/...` 경로에서 판별이 꺼짐 |
-| blast-radius | 사용, 한계 숙지 | 미리보기가 피해를 작게 보여줄 수 있음. 우회 명령 다수 |
+
+### 공통 주의: band(프롬프트 위 영역)를 독차지하는 mod
+
+band는 여러 mod가 순서대로 그리는 공간입니다. 다른 mod의 내용을 지키려면 `next(e)`로 나머지를 그리게 한 뒤 덧붙여야 합니다.
+context-bar, mission-control은 그렇게 하지만 **token-weather(`token-weather.mjs:54`)와 replay-theater(`replay-theater.mjs:225, 228`)는 자기 내용만 반환**합니다.
+로드 순서에 따라 context-bar의 막대나, 터미널이 좁을 때 band로 뜨는 blast-radius의 확인 버튼이 가려질 수 있습니다.
+blast-radius는 버튼이 안 보이면 10분 뒤 거부하므로 위험하진 않지만, 함께 쓸 때는 **터미널을 144컬럼 이상**으로 쓰세요.
 
 ### 공통 주의: 차단형 mod는 오류가 나면 통과시킵니다
 
@@ -119,6 +138,41 @@ mod의 hook이 예외를 던지거나 시간 제한(10초)을 넘기면 Claude C
 **주의:** 금액은 Claude Code가 계산한 값을 그대로 씁니다. 이 값은 **`modelPricing` 설정이 없으면 정가 기준 추정치**라 실제 엔터프라이즈 청구액과 다를 수 있습니다.
 서브에이전트 비용이 메인 턴 행에 섞일 수 있습니다. **패치 불필요.**
 
+### token-weather
+
+Anthropic DevRel 예제 (`claude-code/mods/token-weather/hooks/token-weather.mjs`, 122줄).
+
+| 항목 | 결과 |
+| --- | --- |
+| 네트워크·프로세스·파일·환경변수·모델·저장 | **모두 없음** |
+| 데이터 출처 | `$.session.usage()`의 `context`(60행). 분류(breakdown)를 요청하지 않아 토큰 계산 요청도 없음 |
+| 상태 | 최근 12턴 사용량을 모듈 변수에만 보관 |
+| 툴 차단·재작성 | 없음 |
+| 갱신 | 세션 시작, 메인 턴 종료(서브에이전트 턴 제외) |
+
+**주의:** band를 그릴 때 `next(e)`를 부르지 않고 자기 한 줄만 반환합니다(54행). 다른 mod의 band가 가려질 수 있습니다.
+사용률은 **전체 창 크기** 기준이라 compaction 지점 기준인 Claude Code 알림보다 낮게 나옵니다(README: band 81% / 알림 90%). **패치 불필요.**
+
+### replay-theater
+
+Anthropic DevRel 예제 (`claude-code/mods/replay-theater/hooks/replay-theater.mjs`, 249줄).
+
+| 항목 | 결과 |
+| --- | --- |
+| 네트워크·프로세스·환경변수·모델 | **없음** |
+| 파일 읽기 | Write 직전 대상 파일을 통째로 읽어 diff 계산(94~95행) |
+| 파일 쓰기·저장 | 없음. 이번 턴의 수정 내용(diff)을 모듈 변수에만 보관 |
+| 툴 차단·재작성 | 없음. 기록 후 그대로 통과(196~204행) |
+| 대상 툴 | Edit, Write, MultiEdit |
+
+**주의**
+
+- band에서 `next(e)`를 부르지 않습니다(225, 228행). 다른 mod의 band가 가려질 수 있습니다.
+- 툴 실행 **전에** 기록하므로, 거부되거나 실패한 수정도 재생 목록에 나옵니다.
+- diff 계산은 양쪽 400줄 이하일 때만 LCS로 하고, 넘으면 전부 삭제/추가로 표시합니다(36~38행). 큰 파일에서도 느려지지 않습니다.
+
+**패치 불필요.**
+
 ---
 
 ## 2. 안전장치 mods
@@ -201,10 +255,69 @@ mod의 hook이 예외를 던지거나 시간 제한(10초)을 넘기면 Claude C
 
 | Mod | 로드 조건 | 팀 환경 확인 결과 | 점검 범위 |
 | --- | --- | --- | --- |
-| `diff` | 항상 | `/diff` 동작 확인 | README만 |
-| `agents-md` | 항상 | 미확인 (`AGENTS.md` 지원) | README만 |
+| `diff` | 항상 | `/diff` 동작 확인 | 코드 전체 |
+| `agents-md` | 항상 | 미확인 (`AGENTS.md` 지원) | 코드 전체 |
 | `telemetry` | Claude Code 분석이 켜진 환경 | **켜지는 조건에 해당** (아래 참고) | 전송 조건·대상·재시도 코드 |
 | `sec-default` | 관리 설정이 있는 머신, 또는 Team·Enterprise 조직 계정 | 관리 설정 없음. 계정 인식 여부는 화면으로 확인 불가 | README |
+
+### diff
+
+`/diff` 패널. 경로는 `mods/diff/hooks/` 기준입니다.
+
+| 항목 | 결과 |
+| --- | --- |
+| 네트워크·모델 | 없음 |
+| 프로세스 실행 | `git`만, 인자 배열(셸 없음), **timeout 5초**(`limits/timing/git-timeout-ms.ts`), 모든 읽기에 `--no-optional-locks` |
+| 인자로 들어가는 값 | git 출력에서 나온 경로(`--literal-pathspecs`), 검증된 SHA, `origin/HEAD`의 브랜치 이름. **사용자나 Claude가 입력한 문자열은 들어가지 않음** |
+| 파일 | 읽기는 `.git/HEAD`와 파일 시각 정보만. 쓰기 없음. `$.store`에 패널 열림 여부와 비교 기준만 저장 |
+| 환경변수 | `CLAUDE_CODE_DISABLE_FILE_CHECKPOINTING`만 |
+| 툴 차단·재작성 | 없음. 패널의 "ask" 버튼을 누를 때만 해당 파일 diff를 다음 프롬프트에 붙임(400줄, 32,000자 제한) |
+| telemetry | 열린 방식, 화면 폭 구간 같은 **고정값만**. 경로나 diff 내용은 없음 |
+
+**큰 RTL 저장소에서의 비용**
+
+- **패널이 열려 있으면** Edit·Write·Bash 호출마다(150ms 묶음) 저장소 전체 `git diff HEAD --shortstat`, `--numstat`을 실행합니다. 백그라운드라 턴을 늦추지는 않습니다.
+- **패널이 닫혀 있으면** git을 실행하지 않습니다. 단 Claude의 첫 수정 때 저장소 확인을 한 번 하고, 터미널이 넓으면 패널을 자동으로 열 수 있습니다.
+- 처음 열 때 `git status --untracked-files=all`로 추적 안 되는 파일을 모두 훑습니다. **빌드 산출물이 `.gitignore`에 없으면 느립니다.**
+- 변경 파일 500개를 넘으면 합계만, 파일당 diff는 400줄·1MB까지만 처리합니다.
+- partial clone(지연 다운로드) 저장소는 폐쇄망에서 git이 객체를 받으려다 5초 timeout으로 실패할 수 있습니다.
+
+**판정:** 그대로 사용. Bash를 많이 쓰는 세션에서는 패널을 닫아 두세요.
+
+### agents-md
+
+`AGENTS.md`를 프로젝트 지시 파일로 읽는 mod. 경로는 `mods/agents-md/hooks/` 기준입니다.
+
+| 항목 | 결과 |
+| --- | --- |
+| 네트워크·프로세스·모델 | 없음 |
+| 파일 읽기 | `AGENTS.md`, `.claude/AGENTS.md`와 그 안의 `@` import |
+| 환경변수 | `CLAUDE_CODE_SIMPLE`, `CLAUDE_CODE_DISABLE_ATTACHMENTS`, `HOME` |
+| telemetry | 파일 수, 길이 같은 **숫자만** |
+
+**읽는 범위 (보안상 중요)**
+
+- 기본 모드(`claude-md-or-agents-md`)는 `/`부터 작업 폴더까지 `CLAUDE.md`가 하나도 없을 때, **같은 범위(`/`부터 작업 폴더까지)의 모든 `AGENTS.md`**를 지시로 넣습니다(`register.ts:113~130`). `/AGENTS.md`, `/workspace/AGENTS.md`, `$HOME/AGENTS.md`도 대상입니다.
+- 같은 조건(`CLAUDE.md` 없음)에서, 작업 중 Claude가 하위 폴더의 파일을 Read하면 그 폴더까지의 `AGENTS.md`를 툴 결과에 붙입니다(`register.ts:203~213`).
+- 즉 **기본 모드에서는 `CLAUDE.md`가 있는 프로젝트라면 아무것도 넣지 않습니다.** `claude-md-and-agents-md` 모드로 바꾸면 `CLAUDE.md`가 있어도 위 동작이 모두 일어납니다.
+- **크기 제한이 없고 내용을 그대로** 지시로 넣습니다.
+
+**위험:** `CLAUDE.md`가 없는 외부 저장소를 받아 그 안에서 Claude Code를 실행하면, 그 저장소나 벤더 IP·SDK 폴더 안의 `AGENTS.md`가 **신뢰된 프로젝트 지시**가 됩니다. 프롬프트 주입 경로입니다.
+팀 저장소에 `CLAUDE.md`를 두면 기본 모드에서는 이 경로가 막힙니다.
+
+**권장 설정:** 팀이 `AGENTS.md`를 쓰지 않는다면 끄세요. 사용자 설정(`~/.claude/settings.json`)에 넣거나 `/config`의 "Project instructions"에서 바꿀 수 있습니다.
+**프로젝트의 `.claude/settings.json`에서는 읽지 않습니다.**
+
+```json
+{
+  "pluginConfigs": {
+    "agents-md@builtin": { "options": { "instructionFiles": "claude-md" } }
+  }
+}
+```
+
+특정 경로만 빼려면 `claudeMdExcludes`도 적용됩니다. mod 자체를 끄려면 `/plugin`의 내장(built-in) 목록에서 끕니다.
+`disableAllHooks`나 `--bare`로는 꺼지지 않습니다(agents-md README). 위 설정 키는 코드와 README 기준이며 실제 적용은 `/config`에서 확인하세요.
 
 ### telemetry
 
@@ -238,6 +351,14 @@ mod의 hook이 예외를 던지거나 시간 제한(10초)을 넘기면 Claude C
 - 팀 컨테이너에는 관리 설정이 없으므로, 게이트웨이를 거친 로그인이 Enterprise 조직으로 인식될 때만 로드됩니다. **이는 화면으로 확인할 수 없습니다.**
 - 따라서 **"설치한 mod가 내 deny 규칙을 우회할 수 있다"고 가정**하고 mod를 검토해야 합니다.
 - 확실히 적용하려면 이미지에 `/etc/claude-code/managed-settings.json`을 넣으면 됩니다. 그러면 계정과 상관없이 항상 로드됩니다.
+
+### 참고: 공식 플러그인 code-modernization
+
+[anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official)에서 mod를 포함한 유일한 플러그인입니다. 레거시 코드 현대화용이라 추천 목록에는 넣지 않았고, 외부 통신 여부만 확인했습니다.
+
+- mod 코드(`hooks/register.ts` 등)에는 네트워크·모델·프로세스 호출이 없습니다. 단 프롬프트마다 상태 한 줄(400자 이내)을, 레거시 파일 Read 때 분석 정보를 컨텍스트에 붙입니다.
+- settings hook이 `scripts/telemetry.sh`를 실행합니다. 스크립트 자체는 네트워크 호출 없이 **숫자만 담은 한 줄**을 출력하고, Claude Code의 telemetry 경로로 넘깁니다. 기본으로 켜져 있고, **플러그인을 쓰지 않아도 설치만 하면** 버전당 한 번 `health` 카운트를 냅니다.
+- `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`(권장 설정)이나 `CODE_MODERNIZATION_TELEMETRY=0`이면 꺼집니다.
 
 ## 5. 점검 방법
 
